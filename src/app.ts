@@ -1,63 +1,48 @@
-import express, {
-  json,
-  urlencoded,
-  Express,
-  Request,
-  Response,
-  NextFunction,
-} from 'express';
-import cors from 'cors';
-import { PORT } from './config';
-import { MainRouter } from './routers/main.router';
-import { AppError } from './utils/app.error';
-import { NotFoundMiddleware } from './middlewares/not-found.middleware';
-import { ErrorHandlerMiddleware } from './middlewares/error-handler.middleware';
+import express, { Application, Request, Response, NextFunction } from "express";
+import cors from "cors";
+import path from "path";
+import { PORT } from "./config/env";
+// import { ErrorHandler } from "./helpers/response.handler";
 
-export default class App {
-  private app: Express;
+export class App {
+    private app: Application;
 
-  constructor() {
-    this.app = express();
-    this.configure();
-    this.routes();
-    this.handleError();
-  }
+    constructor() {
+        this.app = express();
+        this.middlewares();
+        // this.routes();
+        this.handleErrors();
+    }
 
-  private configure(): void {
-    this.app.use(cors());
-    this.app.use(json());
-    this.app.use(urlencoded({ extended: true }));
-  }
+    private middlewares() {
+        this.app.use(express.json());
+        this.app.use(cors());
+        // this.app.use(express.static(path.join(__dirname, "../public")));
+    }
 
-  private handleError(): void {
-    /*
-      📒 Docs:
-      This is a not found error handler.
-    */
-    this.app.use(NotFoundMiddleware.handle());
+    private routes() {
+        // this.app.use("/api/v1/auth", "Hello World");
+    }
 
-    /*
-        📒 Docs:
-        This is a centralized error-handling middleware.
-    */
-    this.app.use(ErrorHandlerMiddleware.handle());
-  }
+    private handleErrors() {
+        // Not found handler
+        this.app.use((req: Request, res: Response, next: NextFunction) => {
+            res.status(404).send("Not found !");
+        });
 
-  private routes(): void {
-    const mainRouter = new MainRouter();
+        // Error handler
+        this.app.use(
+            (err: any, req: Request, res: Response, next: NextFunction) => {
+                res.status(err.code || 500).send({
+                    message: err.message,
+                });
+            }
+        );
+    }
 
-    this.app.get('/api', (req: Request, res: Response) => {
-      res.send(
-        `Hello, Purwadhika student 👋. Have fun working on your mini project ☺️`
-      );
-    });
-
-    this.app.use(mainRouter.getRouter());
-  }
-
-  public start(): void {
-    this.app.listen(PORT, () => {
-      console.log(`➜ [API] Local: http://localhost:${PORT}/`);
-    });
-  }
+    start() {
+        this.app.listen(PORT, () => {
+            console.log(`Final Project is running on port ${PORT}`);
+        });
+    }
 }
