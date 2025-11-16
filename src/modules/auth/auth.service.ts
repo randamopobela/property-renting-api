@@ -1,200 +1,122 @@
-// import { NextFunction, Request, Response } from "express";
-// import { PointsLogType } from "../generated/prisma";
-// import { jwt_reset_secret, jwtSecret, prisma } from "../config/config";
-// import { compare } from "bcrypt";
-// import { ErrorHandler } from "../helpers/response.handler";
-// import {
-//     getNewUserName,
-//     getUserByEmail,
-//     getUserForResetPassword,
-// } from "../helpers/user.prisma";
-// import { IUserLogin, IUserResetPassword } from "../interfaces/user.interface";
-// import { sign, verify } from "jsonwebtoken";
-// import { hashedPassword } from "../helpers/bcrypt";
-// import { generateReferralCode } from "../helpers/generate.referral";
-// import { generateIdUser } from "../helpers/generate.id";
-// import { sendEmail } from "../helpers/nodemailer";
+import { NextFunction, Request, Response } from "express";
+import { jwtRefreshSecret, jwtSecret, prisma } from "../../config/env";
+import { compare } from "bcrypt";
+import { ErrorHandler } from "../../helpers/response.handler";
+import {
+    getUserByEmail,
+    getUserForResetPassword,
+} from "../../helpers/user.prisma";
+import {
+    IUserLogin,
+    IUserResetPassword,
+} from "../../interfaces/user.interface";
+import { sign, verify } from "jsonwebtoken";
+import { hashedPassword } from "../../helpers/bcrypt";
+import { sendEmail } from "../../utils/nodemailer";
 
-// class authService {
-//     async login(req: Request) {
-//         const { email, password } = req.body;
+class authService {
+    async login(req: Request) {
+        const { email, password } = req.body;
 
-//         const user = (await getUserByEmail(email)) as IUserLogin;
-//         if (!user) {
-//             throw new ErrorHandler("Email is incorrect.", 401);
-//         } else if (user.isActive === false) {
-//             throw new ErrorHandler("User is not active.", 401);
-//         } else if (!(await compare(password, user.password as string))) {
-//             throw new ErrorHandler("Password is incorrect.", 401);
-//         }
+        console.log("ini error backend", email, password);
 
-//         delete user.password;
-//         const token = sign(user, jwtSecret, {
-//             expiresIn: "30m",
-//         });
+        const user = (await getUserByEmail(email)) as IUserLogin;
+        if (!user) {
+            throw new ErrorHandler("Email is incorrect.", 401);
+        } else if (user.isActive === false) {
+            throw new ErrorHandler("User is not active.", 401);
+        } else if (user.isVerified === false) {
+            throw new ErrorHandler("User is not verified.", 401);
+        } else if (!(await compare(password, user.password as string))) {
+            throw new ErrorHandler("Password is incorrect.", 401);
+        }
 
-//         return { token };
-//     }
-//     async register(req: Request, next: NextFunction) {
-//         try {
-//             const {
-//                 email,
-//                 password,
-//                 firstName,
-//                 lastName,
-//                 userName,
-//                 profilePicture,
-//                 role,
-//                 phone,
-//                 address,
-//                 referredBy,
-//             } = req.body;
+        delete user.password;
+        const token = sign(user, jwtSecret, {
+            expiresIn: "30m",
+        });
 
-//             const newUser = await prisma.user.create({
-//                 data: {
-//                     id: await generateIdUser(),
-//                     email,
-//                     password: await hashedPassword(password),
-//                     userName: await getNewUserName(firstName, userName ?? null),
-//                     firstName,
-//                     lastName: lastName ?? null,
-//                     profilePicture: profilePicture ?? null,
-//                     role,
-//                     phone: phone ?? null,
-//                     address: address ?? null,
-//                     referralCode: generateReferralCode(),
-//                 },
-//             });
+        console.log("ini error setelah buat token", token);
 
-//             if (referredBy) {
-//                 // Cari user yang memberikan kode referral
-//                 const referrer = await prisma.user.findUnique({
-//                     where: { referralCode: referredBy.toUpperCase() },
-//                 });
+        return { token };
+    }
+    async register(req: Request, next: NextFunction) {
+        try {
+            const {
+                email,
+                password,
+                firstName,
+                lastName,
+                profilePicture,
+                phone,
+                address,
+            } = req.body;
 
-//                 if (!referrer) {
-//                     throw new ErrorHandler("Invalid referral code.", 400);
-//                 }
+            const newUser = await prisma.user.create({
+                data: {
+                    email,
+                    password: await hashedPassword(password),
+                    firstName,
+                    lastName: lastName ?? null,
+                    profilePicture: profilePicture ?? null,
+                    phone: phone ?? null,
+                    address: address ?? null,
+                },
+            });
 
-//                 // Jumlah poin yang akan diberikan
-//                 const bonusPoint = 10000;
+            return newUser;
+        } catch (error) {
+            next(error);
+        }
+    }
 
-//                 // Cek apakah referrer sudah memiliki poin
-//                 const existingPoints = await prisma.userPoints.findUnique({
-//                     where: { userId: referrer.id },
-//                 });
+    // async forgotPassword(req: Request) {
+    //     const { email } = req.body;
 
-//                 if (!existingPoints) {
-//                     await prisma.userPoints.create({
-//                         data: {
-//                             user: { connect: { id: referrer.id } },
-//                             totalPoints: bonusPoint,
-//                         },
-//                     });
-//                 } else {
-//                     await prisma.userPoints.update({
-//                         where: { userId: referrer.id },
-//                         data: {
-//                             totalPoints: {
-//                                 increment: bonusPoint,
-//                             },
-//                         },
-//                     });
-//                 }
+    //     const user = (await getUserForResetPassword(
+    //         email
+    //     )) as IUserResetPassword;
 
-//                 // Update point untuk referrer atau pemberi kode referral
-//                 await prisma.pointsLog.create({
-//                     data: {
-//                         user: { connect: { id: referrer.id } },
-//                         type: PointsLogType.REFERRAL_BONUS,
-//                         description: `Referral bonus from ${newUser.userName}`,
-//                         points: bonusPoint,
-//                         expiredAt: new Date(
-//                             new Date().setMonth(
-//                                 new Date().getMonth() + 3 // Masa berlaku kupon selama 3 bulan
-//                             )
-//                         ),
-//                     },
-//                 });
+    //     if (!user) {
+    //         throw new ErrorHandler("Email is incorrect.", 401);
+    //     } else if (user.isActive === false) {
+    //         throw new ErrorHandler("User is not active.", 401);
+    //     }
 
-//                 // Membuat kupon untuk user baru yang mendaftar dengan kode referral
-//                 await prisma.coupon.create({
-//                     data: {
-//                         title: "Referral Bonus Coupon",
-//                         description: `Welcoming coupon special for ${newUser.userName}`,
-//                         couponCode: `REF-${newUser.userName.toUpperCase()}`,
-//                         discountAmount: 10,
-//                         expiredAt: new Date(
-//                             new Date().setMonth(
-//                                 new Date().getMonth() + 3 // Masa berlaku kupon selama 3 bulan
-//                             )
-//                         ),
-//                         user: { connect: { id: newUser.id } },
-//                     },
-//                 });
+    //     delete user.password;
 
-//                 // Update data referral
-//                 await prisma.referral.create({
-//                     data: {
-//                         referrer: { connect: { id: referrer.id } },
-//                         referred: { connect: { id: newUser.id } },
-//                     },
-//                 });
-//             }
-//         } catch (error) {
-//             next(error);
-//         }
-//     }
+    //     // Logic untuk membuat token reset password
+    //     const token = sign(user, jwtRefreshSecret, {
+    //         expiresIn: "5m",
+    //     });
 
-//     // async logout(req: Request) {}
+    //     // Logic untuk mengirim email dengan token reset password
+    //     const resetLink = `http://localhost:3000/reset-password?token=${token}`;
 
-//     async forgotPassword(req: Request) {
-//         const { email } = req.body;
+    //     await sendEmail(user.email, "Password Reset Request", "resetPassword", {
+    //         name: user.firstName,
+    //         link: resetLink,
+    //     });
+    // }
 
-//         const user = (await getUserForResetPassword(
-//             email
-//         )) as IUserResetPassword;
+    // async resetPassword(req: Request) {
+    //     const { token, newPassword } = req.body;
 
-//         if (!user) {
-//             throw new ErrorHandler("Email is incorrect.", 401);
-//         } else if (user.isActive === false) {
-//             throw new ErrorHandler("User is not active.", 401);
-//         }
+    //     if (!token || !newPassword) {
+    //         throw new ErrorHandler("Token and new password are required", 400);
+    //     }
 
-//         delete user.password;
+    //     // Memverifikasi token
+    //     const decoded = verify(token, jwtRefreshSecret as string) as {
+    //         id: string;
+    //     };
 
-//         // Logic untuk membuat token reset password
-//         const token = sign(user, jwt_reset_secret, {
-//             expiresIn: "5m",
-//         });
+    //     // Update pasword baru user
+    //     await prisma.user.update({
+    //         where: { id: decoded.id },
+    //         data: { password: await hashedPassword(newPassword) },
+    //     });
+    // }
+}
 
-//         // Logic untuk mengirim email dengan token reset password
-//         const resetLink = `http://localhost:3000/reset-password?token=${token}`;
-
-//         await sendEmail(user.email, "Password Reset Request", "resetPassword", {
-//             name: user.firstName,
-//             link: resetLink,
-//         });
-//     }
-
-//     async resetPassword(req: Request) {
-//         const { token, newPassword } = req.body;
-
-//         if (!token || !newPassword) {
-//             throw new ErrorHandler("Token and new password are required", 400);
-//         }
-
-//         // Memverifikasi token
-//         const decoded = verify(token, jwt_reset_secret as string) as {
-//             id: string;
-//         };
-
-//         // Update pasword baru user
-//         await prisma.user.update({
-//             where: { id: decoded.id },
-//             data: { password: await hashedPassword(newPassword) },
-//         });
-//     }
-// }
-
-// export default new authService();
+export default new authService();

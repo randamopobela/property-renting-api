@@ -125,11 +125,14 @@ exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   email: 'email',
   password: 'password',
-  role: 'role',
-  isVerified: 'isVerified',
   firstName: 'firstName',
   lastName: 'lastName',
-  profilePicUrl: 'profilePicUrl',
+  profilePicture: 'profilePicture',
+  role: 'role',
+  phone: 'phone',
+  address: 'address',
+  isActive: 'isActive',
+  isVerified: 'isVerified',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -137,8 +140,7 @@ exports.Prisma.UserScalarFieldEnum = {
 exports.Prisma.TenantScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  company: 'company',
-  phone: 'phone'
+  company: 'company'
 };
 
 exports.Prisma.PropertyScalarFieldEnum = {
@@ -248,14 +250,15 @@ exports.Prisma.JsonNullValueFilter = {
   AnyNull: Prisma.AnyNull
 };
 exports.Role = exports.$Enums.Role = {
-  USER: 'USER',
-  TENANT: 'TENANT',
-  ADMIN: 'ADMIN'
+  GUEST: 'GUEST',
+  TENANT: 'TENANT'
 };
 
 exports.PaymentMethod = exports.$Enums.PaymentMethod = {
-  MANUAL_TRANSFER: 'MANUAL_TRANSFER',
-  GATEWAY: 'GATEWAY'
+  DEBIT_CARD: 'DEBIT_CARD',
+  CREDIT_CARD: 'CREDIT_CARD',
+  TRANSFER: 'TRANSFER',
+  CASH: 'CASH'
 };
 
 exports.BookingStatus = exports.$Enums.BookingStatus = {
