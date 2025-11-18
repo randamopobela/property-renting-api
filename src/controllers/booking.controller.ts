@@ -1,0 +1,93 @@
+import { Request, Response } from 'express';
+import { PrismaClient } from '../generated/prisma';
+
+const prisma = new PrismaClient();
+
+export const createBooking = async (req: Request, res: Response) => {
+  try {
+    // 1. HARDCODE USER ID (Sementara, karena Fitur Login teman belum jadi)
+    // Ganti string di bawah dengan ID User A yang Anda copy dari Prisma Studio
+    const userId = "user-buyer-001"; 
+
+    const { roomId, checkIn, checkOut, guests } = req.body;
+
+    // 2. Validasi sederhana
+    // (Nanti di sini kita cek apakah kamar tersedia di tanggal itu)
+
+    // 3. Hitung total malam (Logic sederhana dulu)
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // 4. Ambil harga kamar
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) return res.status(404).json({ message: "Room not found" });
+
+    const totalAmount = room.basePrice * nights;
+
+    const expireDate = new Date();
+    expireDate.setHours(expireDate.getHours() + 2);
+
+    // 5. Simpan ke Database
+    const newBooking = await prisma.booking.create({
+      data: {
+        userId: userId,       // Pake ID hardcode
+        roomId: roomId,
+        checkIn: start,
+        checkOut: end,
+        nights: nights,
+        guests: guests,
+        amount: totalAmount,
+        method: "MANUAL_TRANSFER", // Default dulu
+        status: "PENDING",
+        expireAt: expireDate
+      }
+    });
+
+    return res.status(201).json({
+      message: "Booking successfully created!",
+      data: newBooking
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to create booking", error });
+  }
+};
+
+export const getMyBookings = async (req: Request, res: Response) => {
+  try {
+    const userId = "user-buyer-001"; 
+
+    const bookings = await prisma.booking.findMany({
+      where: { 
+        userId: userId 
+      },
+      include: {
+        room: {
+          include: {
+            property: {
+                include: {
+                    pictures: true 
+                }
+            } 
+          }
+        },
+        payments: true 
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return res.status(200).json({
+      message: "Daftar pesanan berhasil diambil",
+      data: bookings
+    });
+
+  } catch (error) {
+    console.error("Error getMyBookings:", error);
+    return res.status(500).json({ message: "Gagal mengambil data pesanan", error });
+  }
+};

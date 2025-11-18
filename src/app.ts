@@ -1,8 +1,10 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
-import path from "path";
+// import path from "path";
 import { PORT } from "./config/env";
 // import { ErrorHandler } from "./helpers/response.handler";
+
+import bookingRouter from "./routes/booking.route";
 
 export class App {
     private app: Application;
@@ -10,7 +12,7 @@ export class App {
     constructor() {
         this.app = express();
         this.middlewares();
-        // this.routes();
+        this.routes();
         this.handleErrors();
     }
 
@@ -21,7 +23,13 @@ export class App {
     }
 
     private routes() {
-        // this.app.use("/api/v1/auth", "Hello World");
+        this.app.get("/", (req: Request, res: Response) => {
+            res.send("Welcome to Property Renting API!");
+        });
+
+        this.app.use("/api/bookings", bookingRouter);
+    
+        // this.app.use("/api/auth", authRouter);
     }
 
     private handleErrors() {
@@ -33,6 +41,7 @@ export class App {
         // Error handler
         this.app.use(
             (err: any, req: Request, res: Response, next: NextFunction) => {
+                console.error(err);
                 res.status(err.code || 500).send({
                     message: err.message,
                 });
