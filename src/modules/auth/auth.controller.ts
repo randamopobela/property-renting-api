@@ -17,7 +17,7 @@ class AuthController {
             const data = await authService.register(req, next);
             responseHandler(res, "Registration success, please login!", data);
         } catch (error) {
-            throw next(error);
+            next(error);
         }
     }
 

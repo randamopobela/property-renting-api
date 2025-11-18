@@ -18,8 +18,6 @@ class authService {
     async login(req: Request) {
         const { email, password } = req.body;
 
-        console.log("ini error backend", email, password);
-
         const user = (await getUserByEmail(email)) as IUserLogin;
         if (!user) {
             throw new ErrorHandler("Email is incorrect.", 401);
@@ -36,7 +34,7 @@ class authService {
             expiresIn: "30m",
         });
 
-        console.log("ini error setelah buat token", token);
+        console.log("ini log setelah buat token", token);
 
         return { token };
     }
@@ -52,7 +50,7 @@ class authService {
                 address,
             } = req.body;
 
-            const newUser = await prisma.user.create({
+            await prisma.user.create({
                 data: {
                     email,
                     password: await hashedPassword(password),
@@ -63,8 +61,6 @@ class authService {
                     address: address ?? null,
                 },
             });
-
-            return newUser;
         } catch (error) {
             next(error);
         }

@@ -3,7 +3,7 @@ import cors from "cors";
 import path from "path";
 import { PORT } from "./config/env";
 import { ErrorHandler } from "./helpers/response.handler";
-import authController from "./modules/auth/auth.controller";
+import { authRouter } from "./modules/auth/auth.router";
 
 export class App {
     private app: Application;
@@ -22,7 +22,7 @@ export class App {
     }
 
     private routes() {
-        this.app.use("/api/v1/auth", authController.register);
+        this.app.use("/api/v1/auth", authRouter());
     }
 
     private handleError() {
@@ -39,6 +39,7 @@ export class App {
                 res: Response,
                 next: NextFunction
             ) => {
+                // console.error("🔥 ERROR:", err);
                 res.status(err.code || 500).send({
                     message: err.message,
                 });
