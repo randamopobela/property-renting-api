@@ -2,29 +2,30 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import path from "path";
 import { PORT } from "./config/env";
-// import { ErrorHandler } from "./helpers/response.handler";
+import { ErrorHandler } from "./helpers/response.handler";
+import { authRouter } from "./modules/auth/auth.router";
 
 export class App {
     private app: Application;
 
     constructor() {
         this.app = express();
-        this.middlewares();
-        // this.routes();
-        this.handleErrors();
+        this.middleware();
+        this.routes();
+        this.handleError();
     }
 
-    private middlewares() {
+    private middleware() {
         this.app.use(express.json());
         this.app.use(cors());
         // this.app.use(express.static(path.join(__dirname, "../public")));
     }
 
     private routes() {
-        // this.app.use("/api/v1/auth", "Hello World");
+        this.app.use("/api/v1/auth", authRouter());
     }
 
-    private handleErrors() {
+    private handleError() {
         // Not found handler
         this.app.use((req: Request, res: Response, next: NextFunction) => {
             res.status(404).send("Not found !");
@@ -32,7 +33,13 @@ export class App {
 
         // Error handler
         this.app.use(
-            (err: any, req: Request, res: Response, next: NextFunction) => {
+            (
+                err: ErrorHandler,
+                req: Request,
+                res: Response,
+                next: NextFunction
+            ) => {
+                // console.error("🔥 ERROR:", err);
                 res.status(err.code || 500).send({
                     message: err.message,
                 });
