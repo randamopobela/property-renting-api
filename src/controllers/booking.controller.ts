@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient, PaymentMethod, BookingStatus } from '../generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -39,8 +39,8 @@ export const createBooking = async (req: Request, res: Response) => {
         nights: nights,
         guests: guests,
         amount: totalAmount,
-        method: "MANUAL_TRANSFER", // Default dulu
-        status: "PENDING",
+        method: PaymentMethod.TRANSFER, // Default dulu
+        status: BookingStatus.PENDING,
         expireAt: expireDate
       }
     });
