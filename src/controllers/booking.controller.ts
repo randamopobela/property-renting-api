@@ -7,6 +7,7 @@ export const createBooking = async (req: Request, res: Response) => {
   try {
     // 1. HARDCODE USER ID (Sementara, karena Fitur Login teman belum jadi)
     // Ganti string di bawah dengan ID User A yang Anda copy dari Prisma Studio
+    // TODO: [AUTH-INTEGRATION] Ganti hardcode ini dengan req.user.id jika Auth sudah siap
     const userId = "user-buyer-001"; 
 
     const { roomId, checkIn, checkOut, guests } = req.body;
@@ -58,6 +59,7 @@ export const createBooking = async (req: Request, res: Response) => {
 
 export const getMyBookings = async (req: Request, res: Response) => {
   try {
+    // TODO: [AUTH-INTEGRATION] Ganti hardcode ini dengan req.user.id jika Auth sudah siap
     const userId = "user-buyer-001"; 
 
     const bookings = await prisma.booking.findMany({
@@ -89,5 +91,54 @@ export const getMyBookings = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error getMyBookings:", error);
     return res.status(500).json({ message: "Gagal mengambil data pesanan", error });
+  }
+};
+
+export const cancelBooking = async (req: Request, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+    // TODO: [AUTH-INTEGRATION] Ganti hardcode ini dengan req.user.id jika Auth sudah siap
+    const userId = "user-buyer-001"; // Pakai ID Hardcode yang sama
+
+    // 1. Cari Booking-nya dulu
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId }
+    });
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    // 2. Validasi Kepemilikan (Security)
+    // User A tidak boleh cancel pesanan User B
+    if (booking.userId !== userId) {
+      return res.status(403).json({ message: "You are not authorized to cancel this booking" });
+    }
+
+    // 3. Validasi Status (Business Logic)
+    // Tidak boleh cancel kalau sudah dibayar atau sedang diproses
+    if (booking.status !== BookingStatus.PENDING) {
+      return res.status(400).json({ 
+        message: "Cannot cancel booking. Status is not PENDING." 
+      });
+    }
+
+    // 4. Update Status jadi CANCELLED
+    const updatedBooking = await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: BookingStatus.CANCELLED,
+        updatedAt: new Date()
+      }
+    });
+
+    return res.status(200).json({
+      message: "Booking cancelled successfully",
+      data: updatedBooking
+    });
+
+  } catch (error) {
+    console.error("Error canceling booking:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
