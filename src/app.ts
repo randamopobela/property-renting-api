@@ -4,8 +4,8 @@ import cors from "cors";
 import { PORT } from "./config/env";
 import { ErrorHandler } from "./helpers/response.handler";
 import { authRouter } from "./modules/auth/auth.router";
-
 import bookingRouter from "./routes/booking.route";
+import tenantRouter from "./routes/tenant.route";
 
 export class App {
     private app: Application;
@@ -32,6 +32,7 @@ export class App {
         });
 
         this.app.use("/api/bookings", bookingRouter);
+        this.app.use("/api/tenant", tenantRouter);
     
         // this.app.use("/api/auth", authRouter);
         this.app.use("/api/v1/auth", authRouter());
