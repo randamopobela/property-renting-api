@@ -1,6 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
-import path from "path";
+// import path from "path";
 import { PORT } from "./config/env";
 import { ErrorHandler } from "./helpers/response.handler";
 import { authRouter } from "./modules/auth/auth.router";
@@ -15,7 +15,10 @@ export class App {
         this.app = express();
         this.middleware();
         this.routes();
-        this.handleError();
+        this.handleErrors();
+        this.middleware();
+        this.routes();
+        this.handleErrors();
     }
 
     private middleware() {
@@ -31,7 +34,7 @@ export class App {
         this.app.use("/api/v1/tenant", tenantRouter());
     }
 
-    private handleError() {
+    private handleErrors() {
         // Not found handler
         this.app.use((req: Request, res: Response, next: NextFunction) => {
             res.status(404).send("Not found !");
@@ -39,13 +42,11 @@ export class App {
 
         // Error handler
         this.app.use(
-            (
-                err: ErrorHandler,
-                req: Request,
-                res: Response,
-                next: NextFunction
-            ) => {
-                // console.error("🔥 ERROR:", err);
+            (err: any, req: Request, res: Response, next: NextFunction) => {
+                // 1. Log error biar kelihatan di terminal
+                console.error("🔥 ERROR:", err);
+
+                // 2. Kirim response ke user
                 res.status(err.code || 500).send({
                     message: err.message,
                 });
