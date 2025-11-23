@@ -31,9 +31,11 @@
         "dotenv": "^17.2.3",
         "dotenv-cli": "^11.0.0",
         "express": "^5.1.0",
+        "express-handlebars": "^8.0.4",
         "jsonwebtoken": "^9.0.2",
         "multer": "^2.0.2",
         "node-cron": "^4.2.1",
+        "nodemailer": "^7.0.10",
         "winston": "^3.18.3",
         "winston-daily-rotate-file": "^5.0.0"
     },
