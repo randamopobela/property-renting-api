@@ -29,6 +29,15 @@ class BookingController {
             next(error);
         }
     }
+
+    async getBookingById(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await bookingService.getBookingById(req, next);
+            responseHandler(res, "Your booking successfully fetched", data);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new BookingController();
