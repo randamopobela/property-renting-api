@@ -25,10 +25,10 @@ export class App {
     }
 
     private routes() {
-        this.app.use("/api/auth", authRouter());
-        this.app.use("/api/bookings", bookingRouter());
-        this.app.use("/api/payments", paymentRouter());
-        this.app.use("/api/tenant", tenantRouter());
+        this.app.use("/api/v1/auth", authRouter());
+        this.app.use("/api/v1/bookings", bookingRouter());
+        this.app.use("/api/v1/payments", paymentRouter());
+        this.app.use("/api/v1/tenant", tenantRouter());
     }
 
     private handleError() {
