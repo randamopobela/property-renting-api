@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../config/env";
 import { BookingStatus, PaymentMethod } from "../../generated/prisma";
 import { ErrorHandler } from "../../helpers/response.handler";
+import { CreateBookingRequest } from "../../types/booking.type";
 
 class BookingService {
     async createBooking(req: Request, next: NextFunction) {
@@ -11,7 +12,8 @@ class BookingService {
             // TODO: [AUTH-INTEGRATION] Ganti hardcode ini dengan req.user.id jika Auth sudah siap
             const userId = "user-buyer-001";
 
-            const { roomId, checkIn, checkOut, guests } = req.body;
+            const { roomId, checkIn, checkOut, guests }: CreateBookingRequest =
+                req.body;
 
             // 2. Validasi sederhana
             // (Nanti di sini kita cek apakah kamar tersedia di tanggal itu)
@@ -136,6 +138,31 @@ class BookingService {
             return updatedBooking;
         } catch (error) {
             console.error("Error saat cancel booking:", error);
+            next(error);
+        }
+    }
+
+    async getBookingById(req: Request, next: NextFunction) {
+        try {
+            const { bookingId } = req.params;
+            const userId = "user-buyer-001"; // Hardcode ID (User Guest)
+
+            const booking = await prisma.booking.findFirst({
+                where: {
+                    id: bookingId,
+                    userId: userId, // Validasi: Pastikan punya user sendiri
+                },
+                include: {
+                    room: { include: { property: true } }, // Biar sekalian ambil harga/nama hotel
+                },
+            });
+
+            if (!booking) {
+                throw new ErrorHandler("Booking not found", 404);
+            }
+
+            return booking;
+        } catch (error: any) {
             next(error);
         }
     }
