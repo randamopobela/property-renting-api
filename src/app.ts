@@ -4,6 +4,9 @@ import path from "path";
 import { PORT } from "./config/env";
 import { ErrorHandler } from "./helpers/response.handler";
 import { authRouter } from "./modules/auth/auth.router";
+import { bookingRouter } from "./modules/booking/booking.router";
+import { paymentRouter } from "./modules/payment/payment.router";
+import { tenantRouter } from "./modules/tenant/tenant.router";
 
 export class App {
     private app: Application;
@@ -23,6 +26,9 @@ export class App {
 
     private routes() {
         this.app.use("/api/v1/auth", authRouter());
+        this.app.use("/api/v1/bookings", bookingRouter());
+        this.app.use("/api/v1/payments", paymentRouter());
+        this.app.use("/api/v1/tenant", tenantRouter());
     }
 
     private handleError() {
