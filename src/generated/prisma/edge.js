@@ -265,7 +265,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/randamopobela/Documents/Purwadhika/Projects/property-renting-api/src/generated/prisma",
+      "value": "C:\\FinalProject\\Property_renting_team_3\\property-renting-api\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -274,16 +274,17 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "windows",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/randamopobela/Documents/Purwadhika/Projects/property-renting-api/prisma/schema.prisma",
+    "sourceFilePath": "C:\\FinalProject\\Property_renting_team_3\\property-renting-api\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null
+    "rootEnvPath": "../../../.env",
+    "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../../../prisma",
   "clientVersion": "6.19.0",
@@ -292,7 +293,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": true,
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {

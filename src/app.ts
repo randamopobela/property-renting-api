@@ -4,8 +4,8 @@ import path from "path";
 import { PORT } from "./config/env";
 import { ErrorHandler } from "./helpers/response.handler";
 import { authRouter } from "./modules/auth/auth.router";
-import { bookingRouter } from "./modules/booking/booking.router";
 import { paymentRouter } from "./modules/payment/payment.router";
+import bookingRouter from "./modules/booking/booking.router"; 
 import { tenantRouter } from "./modules/tenant/tenant.router";
 
 export class App {
@@ -22,13 +22,17 @@ export class App {
         this.app.use(express.json());
         this.app.use(cors());
         // this.app.use(express.static(path.join(__dirname, "../public")));
+        this.app.use((req, res, next) => {
+        console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
+        next();
+    });
     }
 
     private routes() {
         this.app.use("/api/auth", authRouter());
-        this.app.use("/api/bookings", bookingRouter());
+        this.app.use("/api/bookings", bookingRouter);
         this.app.use("/api/payments", paymentRouter());
-        this.app.use("/api/tenant", tenantRouter());
+        this.app.use("/api/tenant", tenantRouter);
     }
 
     private handleError() {

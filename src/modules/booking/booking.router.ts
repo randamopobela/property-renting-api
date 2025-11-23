@@ -1,22 +1,27 @@
-import { Router } from "express";
-import bookingController from "./booking.controller";
-import { verifyToken } from "../../middlewares/auth.middleware";
+import { Router } from 'express';
+// 👇 PERHATIKAN: Pakai kurung kurawal { }
+import { BookingController } from './booking.controller'; 
+import { uploader } from '../../middlewares/uploader.middleware';
 
-export const bookingRouter = () => {
-    const router = Router();
+const router = Router();
 
-    // router.use(verifyToken);
+// 👇 INSTANSIASI CLASS (Ini yang tadi error)
+// Karena kita import Class-nya, sekarang kita bisa pakai 'new'
+const bookingController = new BookingController(); 
 
-    router.post("/", bookingController.create);
+// --- 1. Route Spesifik (HARUS DI ATAS) ---
+router.post('/', bookingController.create.bind(bookingController));
+router.get('/my-bookings', bookingController.getMyBookings.bind(bookingController));
+router.get('/room/:roomId', bookingController.getRoomDetail.bind(bookingController));
 
-    // // Route melihat daftar pesanan
-    // // Method: GET
-    // // URL akses: http://localhost:8000/api/v1/bookings/my-bookings
-    router.get("/my-bookings", bookingController.getMyBookings);
+// --- 2. Route Dinamis (HARUS DI BAWAH) ---
+router.get('/:bookingId', bookingController.getBookingById.bind(bookingController));
+router.post(
+  '/:bookingId/payment', 
+  // Execute uploader dulu:
+  uploader("TRX", "payment-proofs").single('paymentProof'), 
+  bookingController.uploadPayment.bind(bookingController)
+);
+router.patch('/:bookingId/cancel', bookingController.cancel.bind(bookingController));
 
-    // // Route Cancel
-    // // URL: http://localhost:8000/api/v1/bookings/:bookingId/cancel
-    router.patch("/:bookingId/cancel", bookingController.cancelBooking);
-
-    return router;
-};
+export default router;
