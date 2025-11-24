@@ -1,27 +1,24 @@
-import { PrismaClient, PaymentMethod, BookingStatus } from '../../generated/prisma';
+import { PrismaClient, BookingStatus, PaymentMethod } from '../../generated/prisma'; // Sesuaikan path relative
 import { CreateBookingRequest } from '../../types/booking.type';
 
 const prisma = new PrismaClient();
 
 export class BookingService {
   
-  // Service: Hitung harga & Buat Booking
+  // Service 1: Create Booking
   async createBooking(userId: string, data: CreateBookingRequest) {
     const { roomId, checkIn, checkOut, guests } = data;
 
-    // Logic Hitung Malam
     const start = new Date(checkIn);
     const end = new Date(checkOut);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // Cek Room & Harga
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room) throw new Error("Room not found");
 
     const totalAmount = room.basePrice * nights;
     
-    // Set Expire 2 Jam
     const expireDate = new Date();
     expireDate.setHours(expireDate.getHours() + 2);
 
@@ -41,7 +38,7 @@ export class BookingService {
     });
   }
 
-  // Service: Ambil Booking User
+  // Service 2: Get User Bookings
   async getUserBookings(userId: string) {
     return await prisma.booking.findMany({
       where: { userId },
@@ -55,26 +52,46 @@ export class BookingService {
     });
   }
 
-  // Service: Upload Payment
+  // Service 3: Upload Payment (SUDAH DIPERBAIKI)
+  // Menggunakan parameter filePath (string) agar sesuai dengan Controller
   async processPaymentUpload(bookingId: string, filePath: string) {
-    // Gunakan Transaction
-    return await prisma.$transaction(async (tx) => {
-        // Update Status
+    
+    // 1. Cek Booking Ada atau Tidak
+    const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+    });
+
+    if (!booking) {
+        throw new Error("Booking not found");
+    }
+
+    // 2. Gunakan Transaction
+    const result = await prisma.$transaction(async (tx) => {
+        // A. Update Status Booking
         await tx.booking.update({
             where: { id: bookingId },
-            data: { status: BookingStatus.AWAITING_CONFIRMATION }
+            data: { status: BookingStatus.AWAITING_CONFIRMATION },
         });
-        
-        // Upsert Payment
+
+        // B. Upsert Payment
+        // Menggunakan filePath string langsung
         return await tx.payment.upsert({
-            where: { bookingId },
-            update: { proofUrl: filePath, updatedAt: new Date() },
-            create: { bookingId, proofUrl: filePath }
+            where: { bookingId: bookingId },
+            update: {
+                proofUrl: filePath, 
+                updatedAt: new Date()
+            },
+            create: {
+                bookingId: bookingId,
+                proofUrl: filePath,
+            },
         });
     });
+
+    return result;
   }
 
-  // Service: Cancel Booking
+  // Service 4: Cancel Booking
   async cancelBooking(bookingId: string, userId: string) {
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     

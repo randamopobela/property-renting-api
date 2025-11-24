@@ -75,14 +75,22 @@ export class BookingController {
       
       if (!file) return res.status(400).json({ message: "No file uploaded" });
 
+      // Perhatikan path-nya, pastikan pakai slash /images/
       const filePath = `/images/${file.filename}`;
       
-      // Panggil fungsi service untuk update DB
       const result = await bookingService.processPaymentUpload(bookingId, filePath);
 
       res.status(200).json({ message: "Upload success", data: result });
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      // 👇 PERBAIKAN DI SINI
+      console.error("🔥 Upload Error:", error);
+      
+      // Cek apakah error.code itu angka? Kalau bukan, pakai 500
+      const statusCode = typeof error.code === 'number' ? error.code : 500;
+      
+      res.status(statusCode).json({ 
+        message: error.message || "Internal Server Error" 
+      });
     }
   }
 
