@@ -1,20 +1,17 @@
 import { Router } from "express";
 import tenantController from "./tenant.controller";
-import { verifyToken } from "../../middlewares/auth.middleware";
+// import { verifyToken } from "../../middlewares/auth.middleware"; // Uncomment jika Auth sudah siap
 
-export const tenantRouter = () => {
-    const router = Router();
+const router = Router();
 
-    // router.use(verifyToken);
+// router.use(verifyToken);
 
-    // GET Dashboard Tenant
-    router.get("/bookings", tenantController.getTenantBookings);
+// GET Dashboard Tenant
+// Perbaikan: Menggunakan method 'getDashboard' yang baru
+router.get("/bookings", tenantController.getDashboard);
 
-    // POST Approve/Reject Payment
-    // URL: /api/tenant/bookings/:bookingId/verify
-    router.post("/bookings/:bookingId/verify", tenantController.verifyPayment);
+// POST Approve/Reject Payment
+// URL: /api/tenant/bookings/:bookingId/verify
+router.post("/bookings/:bookingId/verify", tenantController.verifyPayment);
 
-    return router;
-};
-
-// import { getTenantBookings, verifyPayment } from '../controllers/tenant.controller';
+export default router;

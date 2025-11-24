@@ -1,27 +1,41 @@
 import { Router } from 'express';
-// 👇 PERHATIKAN: Pakai kurung kurawal { }
-import { BookingController } from './booking.controller'; 
+import { BookingController } from './booking.controller';
+// 👇 Pastikan import ini menggunakan kurung kurawal { } (Named Import)
 import { uploader } from '../../middlewares/uploader.middleware';
 
 const router = Router();
+const bookingController = new BookingController();
 
-// 👇 INSTANSIASI CLASS (Ini yang tadi error)
-// Karena kita import Class-nya, sekarang kita bisa pakai 'new'
-const bookingController = new BookingController(); 
+// ============================================================
+// ⚠️ ZONA KHUSUS (Static / Specific Routes) - WAJIB DI ATAS
+// ============================================================
 
-// --- 1. Route Spesifik (HARUS DI ATAS) ---
+// 1. Create Booking
 router.post('/', bookingController.create.bind(bookingController));
+
+// 2. Get My Bookings
 router.get('/my-bookings', bookingController.getMyBookings.bind(bookingController));
+
+// 3. Get Room Detail
 router.get('/room/:roomId', bookingController.getRoomDetail.bind(bookingController));
 
-// --- 2. Route Dinamis (HARUS DI BAWAH) ---
+
+// ============================================================
+// ⚠️ ZONA DINAMIS (Dynamic Routes) - WAJIB DI BAWAH
+// ============================================================
+
+// 4. Get Booking Detail
 router.get('/:bookingId', bookingController.getBookingById.bind(bookingController));
+
+// 5. Upload Payment
 router.post(
   '/:bookingId/payment', 
-  // Execute uploader dulu:
-  uploader("TRX", "payment-proofs").single('paymentProof'), 
+  // 👇 Panggil Function uploader("PREFIX", "FOLDER")
+  uploader("TRX", "images").single('paymentProof'), 
   bookingController.uploadPayment.bind(bookingController)
 );
+
+// 6. Cancel Booking
 router.patch('/:bookingId/cancel', bookingController.cancel.bind(bookingController));
 
 export default router;

@@ -1,71 +1,42 @@
-import { Request } from "express";
-import multer from "multer";
-import { join } from "path";
+import multer from 'multer';
+import path from 'path';
+import { Request } from 'express';
+import fs from 'fs';
 
-type DestinationCallback = (error: Error | null, destination: string) => void;
-type FilenameCallback = (error: Error | null, filename: string) => void;
-type FileFilterCallback = (error?: Error | null, acceptFile?: boolean) => void;
+export const uploader = (filePrefix: string, folderName: string) => {
+  // 1. Tentukan folder penyimpanan default
+  // process.cwd() akan mengambil root folder project (C:\FinalProject\Property_renting_team_3)
+  const defaultDir = path.join(process.cwd(), 'public', folderName); 
 
-export const uploader = (filePrefix: string, folderName?: string) => {
-    const defaultDir = join(__dirname, "../../../public");
+  // 2. Cek & Buat folder jika belum ada (Auto-create folder)
+  // Ini fitur safety agar tidak error ENOENT lagi
+  if (!fs.existsSync(defaultDir)) {
+    fs.mkdirSync(defaultDir, { recursive: true });
+    console.log(`📂 Folder dibuat otomatis: ${defaultDir}`);
+  }
 
-    const storage = multer.diskStorage({
-        destination: (
-            req: Request,
-            file: Express.Multer.File,
-            cb: DestinationCallback
-        ) => {
-            const destination = folderName
-                ? defaultDir + folderName
-                : defaultDir;
-            cb(null, destination);
-        },
-        filename: (
-            req: Request,
-            file: Express.Multer.File,
-            cb: FilenameCallback
-        ) => {
-            const originalNameParts = file.originalname.split(".");
-            const fileExtension =
-                originalNameParts[originalNameParts.length - 1] ?? "";
-            const newFileName = `${filePrefix}-${Date.now()}.${fileExtension}`;
-            cb(null, newFileName);
-        },
-    });
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      // Gunakan folder yang sudah dipastikan ada tadi
+      cb(null, defaultDir);
+    },
+    filename: (req, file, cb) => {
+      // Rename file agar unik
+      const originalName = file.originalname.replace(/\s+/g, ''); // Hapus spasi
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      cb(null, `${filePrefix}-${uniqueSuffix}${path.extname(originalName)}`);
+    }
+  });
 
-    // const fileFilter = (
-    //   req: Request,
-    //   file: Express.Multer.File,
-    //   cb: FileFilterCallback
-    // ) => {
-    //   if (!["image/png", "image/jpeg"].includes(file.mimetype)) {
-    //     cb(new Error("Invalid file type"), false);
-    //   } else {
-    //     cb(null, true);
-    //   }
-    // };
-
-    const fileFilter = (req: any, file: any, cb: any) => {
-        const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "application/pdf",
-            "application/x-pdf",
-            "application/octet-stream",
-        ];
-
-        if (!allowedTypes.includes(file.mimetype)) {
-            cb(
-                new Error("File tidak didukung, gunakan JPG, PNG, atau PDF"),
-                false
-            );
-        } else {
-            cb(null, true);
-        }
-    };
-
-    const ONE_MB = 1 * 1024 * 1024;
-    const limits = { fileSize: 1.5 * ONE_MB }; // 1.5MB
-
-    return multer({ storage, fileFilter, limits });
+  return multer({
+    storage: storage,
+    limits: { fileSize: 1024 * 1024 * 1 }, // 1MB
+    fileFilter: (req: Request, file, cb) => {
+      if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+        cb(null, true);
+      } else {
+        cb(new Error('Format file harus .png, .jpg, atau .jpeg!'));
+      }
+    }
+  });
 };
