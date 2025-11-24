@@ -4,7 +4,7 @@ import path from "path";
 import { PORT } from "./config/env";
 import { ErrorHandler } from "./helpers/response.handler";
 import { authRouter } from "./modules/auth/auth.router";
-import bookingRouter from "./modules/booking/booking.router"; 
+import bookingRouter from "./modules/booking/booking.router";
 import tenantRouter from "./modules/tenant/tenant.router";
 
 export class App {
@@ -15,19 +15,19 @@ export class App {
         this.middleware();
         this.routes();
         this.handleErrors();
-        this.middleware();
-        this.routes();
-        this.handleErrors();
     }
 
     private middleware() {
         this.app.use(express.json());
         this.app.use(cors());
-        this.app.use("/images", express.static(path.join(__dirname, "../public/images")));
+        this.app.use(
+            "/images",
+            express.static(path.join(__dirname, "../public/images"))
+        );
         this.app.use((req, res, next) => {
-        console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
-        next();
-    });
+            console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
+            next();
+        });
     }
 
     private routes() {
@@ -47,7 +47,12 @@ export class App {
 
         // Error handler
         this.app.use(
-            (err: any, req: Request, res: Response, next: NextFunction) => {
+            (
+                err: ErrorHandler,
+                req: Request,
+                res: Response,
+                next: NextFunction
+            ) => {
                 // 1. Log error biar kelihatan di terminal
                 console.error("🔥 ERROR:", err);
 

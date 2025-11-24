@@ -265,7 +265,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\FinalProject\\Property_renting_team_3\\property-renting-api\\src\\generated\\prisma",
+      "value": "/Users/randamopobela/Documents/Purwadhika/Projects/property-renting-api/src/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -274,12 +274,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "darwin-arm64",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\FinalProject\\Property_renting_team_3\\property-renting-api\\prisma\\schema.prisma",
+    "sourceFilePath": "/Users/randamopobela/Documents/Purwadhika/Projects/property-renting-api/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
