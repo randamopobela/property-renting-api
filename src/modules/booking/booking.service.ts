@@ -3,7 +3,6 @@ import { CreateBookingRequest } from '../../types/booking.type';
 
 const prisma = new PrismaClient();
 
-// 👇 PASTIKAN ADA KATA 'export' DI SINI
 export class BookingService {
   
   // Service: Hitung harga & Buat Booking
