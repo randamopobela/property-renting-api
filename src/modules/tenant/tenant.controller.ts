@@ -4,7 +4,7 @@ import { TenantService } from "./tenant.service"; // Import Class-nya
 
 const tenantService = new TenantService();
 
-class TenantController {
+export class TenantController {
     
     // 1. Method Dashboard (Menggantikan getTenantBookings)
     async getDashboard(req: Request, res: Response, next: NextFunction) {

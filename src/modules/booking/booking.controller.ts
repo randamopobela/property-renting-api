@@ -50,20 +50,32 @@ export class BookingController {
   // 4. Get Booking By ID
   async getBookingById(req: Request, res: Response) {
     try {
-        console.log("⚠️ Masuk ke getBookingById. ID:", req.params.bookingId);
         const { bookingId } = req.params;
+        console.log("🔍 Mencari Booking ID:", bookingId);
+
+        // Validasi input sederhana
+        if (!bookingId || bookingId === "undefined") {
+            return res.status(400).json({ message: "Invalid Booking ID" });
+        }
         
-        // Gunakan service atau prisma langsung
         const booking = await prisma.booking.findUnique({
             where: { id: bookingId },
-            include: { room: { include: { property: true } } }
+            include: { 
+                room: { include: { property: true } },
+                payments: true // Include payments biar tau status bayar
+            }
         });
 
-        if (!booking) return res.status(404).json({ message: "Booking not found" });
+        // SAFETY CHECK: Jika null, jangan lanjut, langsung return 404
+        if (!booking) {
+            console.error("❌ Booking tidak ditemukan di database!");
+            return res.status(404).json({ message: "Booking not found" });
+        }
 
         res.status(200).json({ message: "Success", data: booking });
     } catch (error: any) {
-        res.status(500).json({ message: error.message });
+        console.error("🔥 Error getBookingById:", error);
+        res.status(500).json({ message: error.message || "Internal Server Error" });
     }
   }
 
