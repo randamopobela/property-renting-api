@@ -15,7 +15,33 @@ class AuthController {
     async register(req: Request, res: Response, next: NextFunction) {
         try {
             const data = await authService.register(req, next);
-            responseHandler(res, "Registration success, please login!", data);
+            responseHandler(
+                res,
+                "Registration success, verify your email!",
+                data
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async verifyEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.verifyEmail(req, res, next);
+            responseHandler(
+                res,
+                "Email successfully verified. You can now login.",
+                data
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async resendEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.resendEmail(req, res, next);
+            responseHandler(res, "Verification email has been resent.", data);
         } catch (error) {
             next(error);
         }

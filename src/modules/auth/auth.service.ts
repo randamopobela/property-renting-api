@@ -13,6 +13,7 @@ import {
 import { sign, verify } from "jsonwebtoken";
 import { hashedPassword } from "../../helpers/bcrypt";
 import { sendEmail } from "../../utils/nodemailer";
+import { createEmailVerificationToken, verifyJWT } from "../../helpers/jwt";
 
 class authService {
     async login(req: Request) {
@@ -50,6 +51,14 @@ class authService {
                 address,
             } = req.body;
 
+            const existingUser = await prisma.user.findUnique({
+                where: { email },
+            });
+
+            if (existingUser) {
+                throw new ErrorHandler("Email already in use.", 400);
+            }
+
             await prisma.user.create({
                 data: {
                     email,
@@ -60,6 +69,74 @@ class authService {
                     phone: phone ?? null,
                     address: address ?? null,
                 },
+            });
+
+            const token = createEmailVerificationToken({
+                email,
+                purpose: "email_verification",
+            });
+
+            const verificationUrl = `http://localhost:3000/verify-email?token=${token}`;
+
+            await sendEmail(email, "Email Verification", "verifyEmail", {
+                name: firstName,
+                link: verificationUrl,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async verifyEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { token } = req.body;
+
+            if (!token) {
+                throw new ErrorHandler("Token is required", 400);
+            }
+
+            const decoded = verifyJWT(token) as {
+                email: string;
+                purpose: string;
+            };
+
+            if (decoded.purpose !== "email_verification") {
+                throw new ErrorHandler("Invalid token purpose", 400);
+            }
+
+            await prisma.user.update({
+                where: { email: decoded.email },
+                data: { isVerified: true },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async resendEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { email } = req.body;
+
+            const user = await getUserByEmail(email);
+
+            if (!user) {
+                throw new ErrorHandler("Email is incorrect.", 401);
+            } else if (user.isActive === false) {
+                throw new ErrorHandler("User is not active.", 401);
+            } else if (user.isVerified === true) {
+                throw new ErrorHandler("User is already verified.", 400);
+            }
+
+            const token = createEmailVerificationToken({
+                email,
+                purpose: "email_verification",
+            });
+
+            const verificationUrl = `http://localhost:3000/verify-email?token=${token}`;
+
+            await sendEmail(email, "Email Verification", "verifyEmail", {
+                name: user.firstName,
+                link: verificationUrl,
             });
         } catch (error) {
             next(error);

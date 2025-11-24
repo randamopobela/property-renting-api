@@ -14,3 +14,9 @@ export const generateJWT = (payload: object): string => {
 export const verifyJWT = (token: string) => {
     return verify(token, jwtSecret);
 };
+
+export const createEmailVerificationToken = (payload: object): string => {
+    return sign(payload, jwtSecret, {
+        expiresIn: "1h",
+    } as SignOptions);
+};
