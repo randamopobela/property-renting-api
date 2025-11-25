@@ -182,6 +182,7 @@ model Booking {
 
     // Relations
     payments Payment[]
+    review Review?
 
     @@map("bookings")
 }
@@ -201,16 +202,22 @@ model Payment {
 }
 
 model Review {
-    id         String   @id @default(cuid())
-    propertyId String   @map("property_id")
-    userId     String   @map("user_id")
-    comment    String
-    repliedBy  String?  @map("replied_by")
-    reply      String?
-    createdAt  DateTime @default(now()) @map("created_at")
+    id         String    @id @default(cuid())
+    bookingId  String    @unique @map("booking_id") 
+    propertyId String    @map("property_id")
+    userId     String    @map("user_id")
+    comment    String    @db.Text
+    repliedBy  String?   @map("replied_by")
+    reply      String?   @db.Text
+    repliedAt  DateTime? @map("replied_at")
 
+    createdAt  DateTime  @default(now()) @map("created_at")
+    updatedAt  DateTime  @updatedAt @map("updated_at")
+
+    // Relations Objects
     property      Property @relation(fields: [propertyId], references: [id])
     user          User     @relation(fields: [userId], references: [id])
+    booking       Booking  @relation(fields: [bookingId], references: [id])
     repliedByUser User?    @relation("ReviewReplier", fields: [repliedBy], references: [id])
 
     @@map("reviews")
