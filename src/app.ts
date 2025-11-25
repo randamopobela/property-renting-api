@@ -6,6 +6,7 @@ import { ErrorHandler } from "./helpers/response.handler";
 import { authRouter } from "./modules/auth/auth.router";
 import bookingRouter from "./modules/booking/booking.router";
 import tenantRouter from "./modules/tenant/tenant.router";
+import reviewRouter from "./modules/review/review.router";
 
 export class App {
     private app: Application;
@@ -37,6 +38,7 @@ export class App {
         this.app.use("/api/auth", authRouter());
         this.app.use("/api/bookings", bookingRouter);
         this.app.use("/api/tenant", tenantRouter);
+        this.app.use("/api/reviews", reviewRouter);
     }
 
     private handleErrors() {
@@ -53,10 +55,7 @@ export class App {
                 res: Response,
                 next: NextFunction
             ) => {
-                // 1. Log error biar kelihatan di terminal
                 console.error("🔥 ERROR:", err);
-
-                // 2. Kirim response ke user
                 res.status(err.code || 500).send({
                     message: err.message,
                 });
