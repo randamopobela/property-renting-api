@@ -22,7 +22,8 @@ export class TenantService {
           include: { property: true }
         },
         user: true,     // Data Penyewa
-        payments: true  // Bukti Bayar
+        payments: true,
+        review: true  // Bukti Bayar
       },
       orderBy: { createdAt: 'desc' }
     });
