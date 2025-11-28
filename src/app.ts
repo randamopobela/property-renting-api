@@ -7,6 +7,7 @@ import { authRouter } from "./modules/auth/auth.router";
 import bookingRouter from "./modules/booking/booking.router";
 import tenantRouter from "./modules/tenant/tenant.router";
 import reviewRouter from "./modules/review/review.router";
+import reportRouter from "./modules/report/report.router";
 
 export class App {
     private app: Application;
@@ -39,6 +40,7 @@ export class App {
         this.app.use("/api/bookings", bookingRouter);
         this.app.use("/api/tenant", tenantRouter);
         this.app.use("/api/reviews", reviewRouter);
+        this.app.use("/api/reports", reportRouter);
     }
 
     private handleErrors() {
