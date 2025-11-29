@@ -1,5 +1,7 @@
 import { PrismaClient, BookingStatus, PaymentMethod } from '../../generated/prisma'; // Sesuaikan path relative
 import { CreateBookingRequest } from '../../types/booking.type';
+import { emailService } from '../../services/email.service';
+import { paymentReceivedTemplate } from '../../helpers/emailTemplates';
 
 const prisma = new PrismaClient();
 
@@ -59,6 +61,7 @@ export class BookingService {
     // 1. Cek Booking Ada atau Tidak
     const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
+        include: { user: true }
     });
 
     if (!booking) {
@@ -88,6 +91,14 @@ export class BookingService {
         });
     });
 
+    // C. KIRIM EMAIL NOTIFIKASI (Side Effect)
+    // Kita taruh di luar transaction agar kalau email gagal, booking tetap tersimpan.
+    if (booking.user && booking.user.email) {
+        const htmlEmail = paymentReceivedTemplate(booking.user.firstName, booking.id);
+        
+        // Fire and forget (tidak perlu await agar user tidak menunggu loading email)
+        emailService.sendEmail(booking.user.email, "Pembayaran Sedang Diverifikasi", htmlEmail);
+    }
     return result;
   }
 

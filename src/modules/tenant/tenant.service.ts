@@ -1,8 +1,11 @@
 import { PrismaClient, BookingStatus } from '../../generated/prisma'; // Sesuaikan path ke generated prisma Anda
+import { emailService } from '../../services/email.service';
+import { bookingConfirmedTemplate } from '../../helpers/emailTemplates';
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 const prisma = new PrismaClient();
 
-// 👇 PASTIKAN ADA KATA 'export' DI SINI
 export class TenantService {
 
   // Service: Ambil Semua Pesanan Milik Tenant
@@ -37,7 +40,10 @@ export class TenantService {
         id: bookingId,
         room: { property: { tenant: { userId: tenantUserId } } }
       },
-      include: { payments: true }
+      include: { payments: true,
+        user: true,
+        room: { include: { property: true } }
+       }
     });
 
     if (!booking) throw new Error("Booking not found or unauthorized");
@@ -61,6 +67,21 @@ export class TenantService {
                 where: { id: booking.payments[0].id },
                 data: { approvedBy: tenantUserId, approvedAt: new Date() }
             });
+        }
+
+        // 👇 KIRIM EMAIL KONFIRMASI KE USER
+        if (booking.user && booking.user.email) {
+            const checkInDate = format(new Date(booking.checkIn), "dd MMMM yyyy", { locale: id });
+            
+            const htmlEmail = bookingConfirmedTemplate(
+                booking.user.firstName, 
+                booking.id, 
+                booking.room.property.name,
+                checkInDate
+            );
+
+            // Fire and forget (tidak perlu await agar tenant tidak menunggu loading email)
+            emailService.sendEmail(booking.user.email, "Booking Confirmed! ✅", htmlEmail);
         }
         return { status: "APPROVED" };
 
