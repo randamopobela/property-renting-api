@@ -1,7 +1,7 @@
 import { App } from "./app";
-import { startCronJob } from "./utils/scheduler.util";
+import cronService from "./services/cron.service";
 
 const app = new App();
 app.start();
 
-startCronJob();
+cronService.init();
