@@ -8,6 +8,7 @@ import bookingRouter from "./modules/booking/booking.router";
 import tenantRouter from "./modules/tenant/tenant.router";
 import reviewRouter from "./modules/review/review.router";
 import reportRouter from "./modules/report/report.router";
+import cronService from "./services/cron.service";
 
 export class App {
     private app: Application;
@@ -17,6 +18,7 @@ export class App {
         this.middleware();
         this.routes();
         this.handleErrors();
+        cronService.init();
     }
 
     private middleware() {
@@ -24,12 +26,7 @@ export class App {
         this.app.use(cors());
         this.app.use(
             "/images",
-            express.static(path.join(__dirname, "../public/images"))
-        );
-        this.app.use((req, res, next) => {
-            console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
-            next();
-        });
+            express.static(path.join(__dirname, "../public/images")));
     }
 
     private routes() {

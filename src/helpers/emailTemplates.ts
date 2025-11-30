@@ -26,3 +26,24 @@ export const bookingConfirmedTemplate = (userName: string, bookingId: string, pr
     <p style="font-size: 12px; color: #888;">StayEase Team</p>
   </div>
 `;
+
+export const reminderEmailTemplate = (userName: string, propertyName: string, checkInDate: string) => `
+  <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h2 style="color: #0d9488; margin: 0;">Besok Waktunya Check-in! 🎒</h2>
+    </div>
+    
+    <p>Halo <strong>${userName}</strong>,</p>
+    <p>Ini adalah pengingat bahwa Anda memiliki jadwal menginap besok di <strong>${propertyName}</strong>.</p>
+    
+    <div style="background: #fff7ed; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f97316;">
+      <p style="margin: 5px 0;"><strong>📅 Tanggal Check-in:</strong> ${checkInDate}</p>
+      <p style="margin: 5px 0;"><strong>📍 Properti:</strong> ${propertyName}</p>
+    </div>
+
+    <p>Pastikan Anda membawa kartu identitas saat kedatangan. Kami tidak sabar menyambut Anda!</p>
+    
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+    <p style="font-size: 12px; color: #888; text-align: center;">StayEase Team</p>
+  </div>
+`;
