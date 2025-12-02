@@ -94,7 +94,7 @@ export class BookingService {
     // C. KIRIM EMAIL NOTIFIKASI (Side Effect)
     // Kita taruh di luar transaction agar kalau email gagal, booking tetap tersimpan.
     if (booking.user && booking.user.email) {
-        const htmlEmail = paymentReceivedTemplate(booking.user.firstName, booking.id);
+        const htmlEmail = paymentReceivedTemplate(booking.user.firstName || "Guest", booking.id);
         
         // Fire and forget (tidak perlu await agar user tidak menunggu loading email)
         emailService.sendEmail(booking.user.email, "Pembayaran Sedang Diverifikasi", htmlEmail);

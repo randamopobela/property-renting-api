@@ -1,6 +1,7 @@
-import { PrismaClient, BookingStatus } from '../../generated/prisma'; // Sesuaikan path ke generated prisma Anda
-import { emailService } from '../../services/email.service';
-import { bookingConfirmedTemplate } from '../../helpers/emailTemplates';
+import { PrismaClient, BookingStatus } from '../../generated/prisma'; 
+// 👇 Import Email Service & Template
+import { emailService } from "../../services/email.service";
+import { bookingConfirmedTemplate } from "../../helpers/emailTemplates";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -15,7 +16,7 @@ export class TenantService {
         room: {
           property: {
             tenant: {
-              userId: tenantUserId // Query Relasi: Cari booking di properti milik tenant ini
+              userId: tenantUserId 
             }
           }
         }
@@ -24,9 +25,9 @@ export class TenantService {
         room: {
           include: { property: true }
         },
-        user: true,     // Data Penyewa
-        payments: true,
-        review: true  // Bukti Bayar
+        user: true,     
+        payments: true,  
+        review: true   
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -34,24 +35,30 @@ export class TenantService {
 
   // Service: Verifikasi Pembayaran (Approve/Reject)
   async verifyPayment(bookingId: string, tenantUserId: string, data: { action: "APPROVE" | "REJECT" }) {
-    // 1. Validasi: Pastikan booking ini milik tenant yang sedang login
     const booking = await prisma.booking.findFirst({
       where: {
         id: bookingId,
         room: { property: { tenant: { userId: tenantUserId } } }
       },
-      include: { payments: true,
-        user: true,
-        room: { include: { property: true } }
-       }
+      include: { 
+          payments: true,
+          user: true, 
+          room: { include: { property: true } } 
+      }
     });
 
     if (!booking) throw new Error("Booking not found or unauthorized");
     
-    // Validasi Status (Opsional: bisa dikomen kalau mau testing bebas)
     if (booking.status !== BookingStatus.AWAITING_CONFIRMATION) {
         throw new Error("Booking is not waiting for confirmation");
     }
+
+    // --- FIX ERROR TYPE SCRIPT ---
+    // Kita ambil payment dengan aman. Gunakan 'any' sementara untuk bypass kebingungan Array vs Object
+    const paymentList = booking.payments as any;
+    const paymentId = Array.isArray(paymentList) && paymentList.length > 0 
+        ? paymentList[0].id 
+        : (paymentList?.id || null);
 
     // 2. Eksekusi Action
     if (data.action === 'APPROVE') {
@@ -61,37 +68,38 @@ export class TenantService {
             data: { status: BookingStatus.PAID } 
         });
 
-        // Catat siapa yang approve
-        if (booking.payments[0]) {
+        // Catat siapa yang approve (Cek jika payment ada)
+        if (paymentId) {
             await prisma.payment.update({
-                where: { id: booking.payments[0].id },
+                where: { id: paymentId },
                 data: { approvedBy: tenantUserId, approvedAt: new Date() }
             });
         }
 
         // 👇 KIRIM EMAIL KONFIRMASI KE USER
+        // FIX: Tambahkan || "Guest" untuk menangani jika firstName null
         if (booking.user && booking.user.email) {
             const checkInDate = format(new Date(booking.checkIn), "dd MMMM yyyy", { locale: id });
             
             const htmlEmail = bookingConfirmedTemplate(
-                booking.user.firstName, 
+                booking.user.firstName || "Guest", // <--- FIX ERROR DI SINI
                 booking.id, 
                 booking.room.property.name,
                 checkInDate
             );
 
-            // Fire and forget (tidak perlu await agar tenant tidak menunggu loading email)
             emailService.sendEmail(booking.user.email, "Booking Confirmed! ✅", htmlEmail);
         }
+
         return { status: "APPROVED" };
 
     } else if (data.action === 'REJECT') {
-        // Balikin ke PENDING biar user upload ulang
         await prisma.booking.update({
             where: { id: bookingId },
             data: { status: BookingStatus.PENDING }
         });
-        return { status: "REJECTED" };
+        
+        return { status: "REJECTED_TO_PENDING" };
     } else {
         throw new Error("Invalid action");
     }
