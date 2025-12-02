@@ -1,97 +1,132 @@
-import { PrismaClient, BookingStatus } from '../../generated/prisma'; // Sesuaikan path ke generated prisma Anda
-import { emailService } from '../../services/email.service';
-import { bookingConfirmedTemplate } from '../../helpers/emailTemplates';
+import { PrismaClient, Prisma, BookingStatus } from '../../generated/prisma'; 
+import { emailService } from "../../services/email.service";
+import { bookingConfirmedTemplate } from "../../helpers/emailTemplates";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { PaginationParams, PaginatedResponse } from '../../types/pagination.type'; 
 
 const prisma = new PrismaClient();
 
 export class TenantService {
+  async getTenantBookings(tenantUserId: string, params: PaginationParams): Promise<PaginatedResponse<any>> {
+    const { 
+        page = 1, 
+        limit = 10, 
+        sortBy = 'createdAt', 
+        sortOrder = 'desc',
+        status,
+        startDate,
+        endDate
+    } = params;
 
-  // Service: Ambil Semua Pesanan Milik Tenant
-  async getTenantBookings(tenantUserId: string) {
-    return await prisma.booking.findMany({
-      where: {
-        room: {
-          property: {
-            tenant: {
-              userId: tenantUserId // Query Relasi: Cari booking di properti milik tenant ini
-            }
-          }
+    const skip = (page - 1) * limit;
+    const whereClause: Prisma.BookingWhereInput = {
+      room: {
+        property: {
+          tenant: { userId: tenantUserId }
         }
-      },
-      include: {
-        room: {
-          include: { property: true }
-        },
-        user: true,     // Data Penyewa
-        payments: true,
-        review: true  // Bukti Bayar
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+      }
+    };
+
+    if (status && status !== 'ALL') {
+        whereClause.status = status as BookingStatus;
+    }
+
+    if (startDate && endDate) {
+        whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: new Date(endDate)
+        };
+    }
+
+    const [data, total] = await prisma.$transaction([
+        prisma.booking.findMany({
+            where: whereClause,
+            skip: skip,
+            take: Number(limit),
+            orderBy: {
+                [sortBy]: sortOrder
+            },
+            include: {
+                room: { include: { property: true } },
+                user: true,
+                payments: true,
+                review: true
+            }
+        }),
+        prisma.booking.count({ where: whereClause })
+    ]);
+
+    return {
+        data,
+        meta: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
   }
 
-  // Service: Verifikasi Pembayaran (Approve/Reject)
   async verifyPayment(bookingId: string, tenantUserId: string, data: { action: "APPROVE" | "REJECT" }) {
-    // 1. Validasi: Pastikan booking ini milik tenant yang sedang login
     const booking = await prisma.booking.findFirst({
       where: {
         id: bookingId,
         room: { property: { tenant: { userId: tenantUserId } } }
       },
-      include: { payments: true,
-        user: true,
-        room: { include: { property: true } }
-       }
+      include: { 
+          payments: true,
+          user: true, 
+          room: { include: { property: true } } 
+      }
     });
 
     if (!booking) throw new Error("Booking not found or unauthorized");
     
-    // Validasi Status (Opsional: bisa dikomen kalau mau testing bebas)
     if (booking.status !== BookingStatus.AWAITING_CONFIRMATION) {
         throw new Error("Booking is not waiting for confirmation");
     }
 
-    // 2. Eksekusi Action
+    const paymentList = booking.payments as any;
+    const paymentId = Array.isArray(paymentList) && paymentList.length > 0 
+        ? paymentList[0].id 
+        : (paymentList?.id || null);
+
     if (data.action === 'APPROVE') {
-        // Update Booking jadi PAID
         await prisma.booking.update({
             where: { id: bookingId },
             data: { status: BookingStatus.PAID } 
         });
 
-        // Catat siapa yang approve
-        if (booking.payments[0]) {
+        if (paymentId) {
             await prisma.payment.update({
-                where: { id: booking.payments[0].id },
+                where: { id: paymentId },
                 data: { approvedBy: tenantUserId, approvedAt: new Date() }
             });
         }
 
-        // 👇 KIRIM EMAIL KONFIRMASI KE USER
         if (booking.user && booking.user.email) {
             const checkInDate = format(new Date(booking.checkIn), "dd MMMM yyyy", { locale: id });
             
             const htmlEmail = bookingConfirmedTemplate(
-                booking.user.firstName, 
+                booking.user.firstName || "Guest",
                 booking.id, 
                 booking.room.property.name,
                 checkInDate
             );
 
-            // Fire and forget (tidak perlu await agar tenant tidak menunggu loading email)
             emailService.sendEmail(booking.user.email, "Booking Confirmed! ✅", htmlEmail);
         }
+
         return { status: "APPROVED" };
 
     } else if (data.action === 'REJECT') {
-        // Balikin ke PENDING biar user upload ulang
         await prisma.booking.update({
             where: { id: bookingId },
             data: { status: BookingStatus.PENDING }
         });
-        return { status: "REJECTED" };
+        
+        return { status: "REJECTED_TO_PENDING" };
     } else {
         throw new Error("Invalid action");
     }

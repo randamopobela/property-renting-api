@@ -8,6 +8,8 @@ import { id } from "date-fns/locale";
 const prisma = new PrismaClient();
 
 class CronService {
+  
+  // Method untuk inisialisasi semua job
   init() {
     console.log("⏰ Cron Service Initialized");
     
@@ -15,8 +17,6 @@ class CronService {
     this.scheduleCheckInReminder();
   }
 
-  // --- JOB 1: AUTO CANCEL (Setiap 1 Menit) ---
-  // Cron Syntax: "* * * * *" artinya tiap menit
   private scheduleAutoCancel() {
     cron.schedule("* * * * *", async () => {
         // console.log("🔍 Checking for expired bookings...");
@@ -46,6 +46,7 @@ class CronService {
     });
   }
 
+  // JOB 2: REMINDER H-1 (Setiap Jam 09:00 Pagi)
   private scheduleCheckInReminder() {
     cron.schedule("0 9 * * *", async () => {
         console.log("💌 Sending H-1 Reminders...");
@@ -56,10 +57,9 @@ class CronService {
             const startOfTomorrow = startOfDay(tomorrow);
             const endOfTomorrow = endOfDay(tomorrow);
 
-            // Cari booking yang Check-in nya BESOK dan Statusnya SUDAH BAYAR
             const upcomingBookings = await prisma.booking.findMany({
                 where: {
-                    status: BookingStatus.PAID, // Hanya yang sudah lunas
+                    status: BookingStatus.PAID,
                     checkIn: {
                         gte: startOfTomorrow,
                         lte: endOfTomorrow
@@ -79,7 +79,7 @@ class CronService {
                     const checkInStr = format(new Date(booking.checkIn), "dd MMMM yyyy", { locale: id });
                     
                     const html = reminderEmailTemplate(
-                        booking.user.firstName,
+                        booking.user.firstName || "Guest", // 👈 FIX: Tambahkan fallback "Guest"
                         booking.room.property.name,
                         checkInStr
                     );
