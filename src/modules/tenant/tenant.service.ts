@@ -1,39 +1,73 @@
-import { PrismaClient, BookingStatus } from '../../generated/prisma'; 
-// 👇 Import Email Service & Template
+import { PrismaClient, Prisma, BookingStatus } from '../../generated/prisma'; 
 import { emailService } from "../../services/email.service";
 import { bookingConfirmedTemplate } from "../../helpers/emailTemplates";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { PaginationParams, PaginatedResponse } from '../../types/pagination.type'; 
 
 const prisma = new PrismaClient();
 
 export class TenantService {
+  async getTenantBookings(tenantUserId: string, params: PaginationParams): Promise<PaginatedResponse<any>> {
+    const { 
+        page = 1, 
+        limit = 10, 
+        sortBy = 'createdAt', 
+        sortOrder = 'desc',
+        status,
+        startDate,
+        endDate
+    } = params;
 
-  // Service: Ambil Semua Pesanan Milik Tenant
-  async getTenantBookings(tenantUserId: string) {
-    return await prisma.booking.findMany({
-      where: {
-        room: {
-          property: {
-            tenant: {
-              userId: tenantUserId 
-            }
-          }
+    const skip = (page - 1) * limit;
+    const whereClause: Prisma.BookingWhereInput = {
+      room: {
+        property: {
+          tenant: { userId: tenantUserId }
         }
-      },
-      include: {
-        room: {
-          include: { property: true }
-        },
-        user: true,     
-        payments: true,  
-        review: true   
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+      }
+    };
+
+    if (status && status !== 'ALL') {
+        whereClause.status = status as BookingStatus;
+    }
+
+    if (startDate && endDate) {
+        whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: new Date(endDate)
+        };
+    }
+
+    const [data, total] = await prisma.$transaction([
+        prisma.booking.findMany({
+            where: whereClause,
+            skip: skip,
+            take: Number(limit),
+            orderBy: {
+                [sortBy]: sortOrder
+            },
+            include: {
+                room: { include: { property: true } },
+                user: true,
+                payments: true,
+                review: true
+            }
+        }),
+        prisma.booking.count({ where: whereClause })
+    ]);
+
+    return {
+        data,
+        meta: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
   }
 
-  // Service: Verifikasi Pembayaran (Approve/Reject)
   async verifyPayment(bookingId: string, tenantUserId: string, data: { action: "APPROVE" | "REJECT" }) {
     const booking = await prisma.booking.findFirst({
       where: {
@@ -53,22 +87,17 @@ export class TenantService {
         throw new Error("Booking is not waiting for confirmation");
     }
 
-    // --- FIX ERROR TYPE SCRIPT ---
-    // Kita ambil payment dengan aman. Gunakan 'any' sementara untuk bypass kebingungan Array vs Object
     const paymentList = booking.payments as any;
     const paymentId = Array.isArray(paymentList) && paymentList.length > 0 
         ? paymentList[0].id 
         : (paymentList?.id || null);
 
-    // 2. Eksekusi Action
     if (data.action === 'APPROVE') {
-        // Update Booking jadi PAID
         await prisma.booking.update({
             where: { id: bookingId },
             data: { status: BookingStatus.PAID } 
         });
 
-        // Catat siapa yang approve (Cek jika payment ada)
         if (paymentId) {
             await prisma.payment.update({
                 where: { id: paymentId },
@@ -76,13 +105,11 @@ export class TenantService {
             });
         }
 
-        // 👇 KIRIM EMAIL KONFIRMASI KE USER
-        // FIX: Tambahkan || "Guest" untuk menangani jika firstName null
         if (booking.user && booking.user.email) {
             const checkInDate = format(new Date(booking.checkIn), "dd MMMM yyyy", { locale: id });
             
             const htmlEmail = bookingConfirmedTemplate(
-                booking.user.firstName || "Guest", // <--- FIX ERROR DI SINI
+                booking.user.firstName || "Guest",
                 booking.id, 
                 booking.room.property.name,
                 checkInDate
