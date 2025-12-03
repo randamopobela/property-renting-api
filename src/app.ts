@@ -6,6 +6,9 @@ import { ErrorHandler } from "./helpers/response.handler";
 import { authRouter } from "./modules/auth/auth.router";
 import bookingRouter from "./modules/booking/booking.router";
 import tenantRouter from "./modules/tenant/tenant.router";
+import reviewRouter from "./modules/review/review.router";
+import reportRouter from "./modules/report/report.router";
+import cronService from "./services/cron.service";
 
 export class App {
     private app: Application;
@@ -15,19 +18,13 @@ export class App {
         this.middleware();
         this.routes();
         this.handleErrors();
+        cronService.init();
     }
 
     private middleware() {
         this.app.use(express.json());
         this.app.use(cors());
-        this.app.use(
-            "/images",
-            express.static(path.join(__dirname, "../public/images"))
-        );
-        this.app.use((req, res, next) => {
-            console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
-            next();
-        });
+        this.app.use("/images", express.static(path.join(__dirname, "../public/images")));
     }
 
     private routes() {
@@ -37,6 +34,8 @@ export class App {
         this.app.use("/api/auth", authRouter());
         this.app.use("/api/bookings", bookingRouter);
         this.app.use("/api/tenant", tenantRouter);
+        this.app.use("/api/reviews", reviewRouter);
+        this.app.use("/api/reports", reportRouter);
     }
 
     private handleErrors() {
@@ -53,10 +52,7 @@ export class App {
                 res: Response,
                 next: NextFunction
             ) => {
-                // 1. Log error biar kelihatan di terminal
                 console.error("🔥 ERROR:", err);
-
-                // 2. Kirim response ke user
                 res.status(err.code || 500).send({
                     message: err.message,
                 });
