@@ -24,9 +24,7 @@ export class App {
     private middleware() {
         this.app.use(express.json());
         this.app.use(cors());
-        this.app.use(
-            "/images",
-            express.static(path.join(__dirname, "../public/images")));
+        this.app.use("/images", express.static(path.join(__dirname, "../public/images")));
     }
 
     private routes() {
