@@ -5,7 +5,7 @@ import authService from "./auth.service";
 class AuthController {
     async login(req: Request, res: Response, next: NextFunction) {
         try {
-            const data = await authService.login(req);
+            const data = await authService.login(req, res);
             responseHandler(res, "Login success", data);
         } catch (error) {
             next(error);
