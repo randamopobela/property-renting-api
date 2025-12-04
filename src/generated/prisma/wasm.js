@@ -211,6 +211,11 @@ exports.Prisma.PaymentScalarFieldEnum = {
   proofUrl: 'proofUrl',
   approvedBy: 'approvedBy',
   approvedAt: 'approvedAt',
+  amount: 'amount',
+  method: 'method',
+  status: 'status',
+  snapToken: 'snapToken',
+  snapRedirectUrl: 'snapRedirectUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -259,10 +264,8 @@ exports.Role = exports.$Enums.Role = {
 };
 
 exports.PaymentMethod = exports.$Enums.PaymentMethod = {
-  DEBIT_CARD: 'DEBIT_CARD',
-  CREDIT_CARD: 'CREDIT_CARD',
   TRANSFER: 'TRANSFER',
-  CASH: 'CASH'
+  GATEWAY: 'GATEWAY'
 };
 
 exports.BookingStatus = exports.$Enums.BookingStatus = {
@@ -272,6 +275,13 @@ exports.BookingStatus = exports.$Enums.BookingStatus = {
   CANCELLED: 'CANCELLED',
   PROCESSING: 'PROCESSING',
   COMPLETED: 'COMPLETED'
+};
+
+exports.PaymentStatus = exports.$Enums.PaymentStatus = {
+  WAITING: 'WAITING',
+  PAID: 'PAID',
+  FAILED: 'FAILED',
+  EXPIRED: 'EXPIRED'
 };
 
 exports.Prisma.ModelName = {
