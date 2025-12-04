@@ -30,7 +30,6 @@ router.get('/:bookingId', bookingController.getBookingById.bind(bookingControlle
 // 5. Upload Payment
 router.post(
   '/:bookingId/payment', 
-  // 👇 Panggil Function uploader("PREFIX", "FOLDER")
   uploader("TRX", "images").single('paymentProof'), 
   bookingController.uploadPayment.bind(bookingController)
 );
