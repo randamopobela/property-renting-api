@@ -9,7 +9,7 @@ export class ReportController {
   async getSales(req: Request, res: Response) {
     try {
         // TODO: Ganti dengan req.user.id nanti
-        const tenantUserId = "user-tenant-1"; 
+        const tenantUserId = "cmir6p5mw0000bp7b6b0f85da"; 
         
         const { start, end } = req.query;
 
@@ -29,7 +29,7 @@ export class ReportController {
   async getAvailability(req: Request, res: Response) {
     try {
         // TODO: Ganti dengan req.user.id nanti
-        const tenantUserId = "user-tenant-1"; 
+        const tenantUserId = "cmir6p5mw0000bp7b6b0f85da"; 
         const { propertyId } = req.query;
 
         const data = await reportService.getAvailabilityReport(tenantUserId, propertyId as string);

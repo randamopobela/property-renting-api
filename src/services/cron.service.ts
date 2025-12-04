@@ -8,8 +8,6 @@ import { id } from "date-fns/locale";
 const prisma = new PrismaClient();
 
 class CronService {
-  
-  // Method untuk inisialisasi semua job
   init() {
     console.log("⏰ Cron Service Initialized");
     
@@ -23,13 +21,11 @@ class CronService {
         
         try {
             const now = new Date();
-
-            // 1. Update Booking yang Expired ke CANCELLED
             const result = await prisma.booking.updateMany({
                 where: {
-                    status: BookingStatus.PENDING, // Hanya yang masih pending
+                    status: BookingStatus.PENDING,
                     expireAt: {
-                        lt: now // Yang expireAt-nya SUDAH LEWAT dari sekarang
+                        lt: now 
                     }
                 },
                 data: {
@@ -79,7 +75,7 @@ class CronService {
                     const checkInStr = format(new Date(booking.checkIn), "dd MMMM yyyy", { locale: id });
                     
                     const html = reminderEmailTemplate(
-                        booking.user.firstName || "Guest", // 👈 FIX: Tambahkan fallback "Guest"
+                        booking.user.firstName || "Guest",
                         booking.room.property.name,
                         checkInStr
                     );

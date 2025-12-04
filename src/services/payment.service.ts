@@ -47,10 +47,7 @@ export class PaymentService {
     };
 
     try {
-      // Request ke Midtrans untuk buat transaksi
       const transaction = await snap.createTransaction(parameter);
-      
-      // Kembalikan Token & Redirect URL
       return {
         token: transaction.token,
         redirect_url: transaction.redirect_url
