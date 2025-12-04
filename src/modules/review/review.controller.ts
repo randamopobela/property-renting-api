@@ -10,7 +10,7 @@ export class ReviewController {
   async create(req: Request, res: Response) {
     try {
         // 👇 TODO: Ganti dengan req.user.id (dari token) nanti saat Auth siap
-        const userId = "user-buyer-001"; 
+        const userId = "cmir6p5q10003bp7b6mdz43i2"; 
         
         const data: CreateReviewRequest = req.body;
         
@@ -40,7 +40,7 @@ export class ReviewController {
   async reply(req: Request, res: Response) {
     try {
         // 👇 TODO: Ganti dengan req.user.id (dari token) nanti
-        const tenantUserId = "user-tenant-1"; 
+        const tenantUserId = "cmir6p5mw0000bp7b6b0f85da"; 
         
         const { reviewId } = req.params;
         const data: ReplyReviewRequest = req.body;

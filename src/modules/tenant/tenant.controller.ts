@@ -10,7 +10,7 @@ class TenantController {
     async getDashboard(req: Request, res: Response, next: NextFunction) {
         try {
             // Nanti jika Auth sudah digabung, ganti dengan req.user.id
-            const tenantUserId = "user-tenant-1"; 
+            const tenantUserId = "cmir6p5mw0000bp7b6b0f85da"; 
             const params: PaginationParams = {
                 page: Number(req.query.page) || 1,
                 limit: Number(req.query.limit) || 10,
@@ -35,7 +35,7 @@ class TenantController {
     async verifyPayment(req: Request, res: Response, next: NextFunction) {
         try {
             // ⚠️ PENTING: ID Tenant hardcode sementara (harus sama dengan database)
-            const tenantUserId = "user-tenant-1"; 
+            const tenantUserId = "cmir6p5mw0000bp7b6b0f85da";
             
             const { bookingId } = req.params;
             const body = req.body; 

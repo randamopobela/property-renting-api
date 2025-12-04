@@ -54,32 +54,59 @@ import TUser from "../types/user.type";
 //     }
 // };
 
-export const verifyToken = async (
+// export const verifyToken = async (
+//     req: Request,
+//     _: Response,
+//     next: NextFunction
+// ) => {
+//     try {
+//         const headerValue = req.headers.authorization;
+//         const rawHeader = Array.isArray(headerValue)
+//             ? headerValue[0]
+//             : headerValue;
+//         if (!rawHeader)
+//             throw new ErrorHandler("Authorization header missing", 401);
+
+//         const token = rawHeader.replace(/^Bearer\s+/i, "").trim();
+//         if (!token) throw new ErrorHandler("Token missing", 401);
+
+//         const decoded = verifyJWT(token) as TUser;
+//         if (!decoded) throw new ErrorHandler("Invalid token", 403);
+
+//         // normalize nullable fields to match IUserLogin (which expects string | undefined)
+//         const userForReq = {
+//             ...decoded,
+//             lastName: decoded.lastName ?? undefined,
+//             profilePicture: decoded.profilePicture ?? undefined,
+//         };
+//         req.user = userForReq as any;
+//         next();
+//     } catch (error) {
+//         next(error);
+//     }
+// };
+
+export const verifyToken = (
     req: Request,
-    _: Response,
+    res: Response,
     next: NextFunction
 ) => {
     try {
-        const headerValue = req.headers.authorization;
-        const rawHeader = Array.isArray(headerValue)
-            ? headerValue[0]
-            : headerValue;
-        if (!rawHeader)
+        const authHeader = req.get("authorization");
+        if (!authHeader) {
             throw new ErrorHandler("Authorization header missing", 401);
+        }
 
-        const token = rawHeader.replace(/^Bearer\s+/i, "").trim();
-        if (!token) throw new ErrorHandler("Token missing", 401);
+        const token = authHeader.split(" ")[1];
+        if (!token) {
+            throw new ErrorHandler("Token missing", 401);
+        }
 
         const decoded = verifyJWT(token) as TUser;
-        if (!decoded) throw new ErrorHandler("Invalid token", 403);
 
-        // normalize nullable fields to match IUserLogin (which expects string | undefined)
-        const userForReq = {
-            ...decoded,
-            lastName: decoded.lastName ?? undefined,
-            profilePicture: decoded.profilePicture ?? undefined,
-        };
-        req.user = userForReq as any;
+        // Simpan ke req.user
+        (req as any).user = decoded;
+
         next();
     } catch (error) {
         next(error);

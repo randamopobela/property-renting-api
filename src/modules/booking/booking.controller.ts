@@ -10,7 +10,7 @@ export class BookingController {
   // 1. Create Booking
   async create(req: Request, res: Response) {
     try {
-      const userId = "user-buyer-001"; // ID Hardcode (Ganti req.user.id nanti)
+      const userId = "cmir6p5q10003bp7b6mdz43i2"; // ID Hardcode (Ganti req.user.id nanti)
       const result = await bookingService.createBooking(userId, req.body);
       res.status(201).json({ message: "Booking created", data: result });
     } catch (error: any) {
@@ -21,7 +21,7 @@ export class BookingController {
   // 2. Get My Bookings
   async getMyBookings(req: Request, res: Response) {
     try {
-      const userId = "user-buyer-001"; // ID Hardcode
+      const userId = "cmir6p5q10003bp7b6mdz43i2"; // ID Hardcode
       const bookings = await bookingService.getUserBookings(userId);
       res.status(200).json({ message: "Success", data: bookings });
     } catch (error: any) {
@@ -94,10 +94,7 @@ export class BookingController {
 
       res.status(200).json({ message: "Upload success", data: result });
     } catch (error: any) {
-      // 👇 PERBAIKAN DI SINI
       console.error("🔥 Upload Error:", error);
-      
-      // Cek apakah error.code itu angka? Kalau bukan, pakai 500
       const statusCode = typeof error.code === 'number' ? error.code : 500;
       
       res.status(statusCode).json({ 
@@ -110,7 +107,7 @@ export class BookingController {
   async cancel(req: Request, res: Response) {
     try {
         const { bookingId } = req.params;
-        const userId = "user-buyer-001"; // Hardcode ID
+        const userId = "cmir6p5q10003bp7b6mdz43i2"; // Hardcode ID
         
         const result = await bookingService.cancelBooking(bookingId, userId);
         res.status(200).json({ message: "Cancelled", data: result });

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { jwtRefreshSecret, jwtSecret, prisma } from "../../config/env";
 import { compare } from "bcrypt";
-import { ErrorHandler } from "../../helpers/response.handler";
+import { ErrorHandler, responseHandler } from "../../helpers/response.handler";
 import {
     getUserByEmail,
     getUserForResetPassword,
@@ -14,9 +14,10 @@ import { sign, verify } from "jsonwebtoken";
 import { hashedPassword } from "../../helpers/bcrypt";
 import { sendEmail } from "../../utils/nodemailer";
 import { createEmailVerificationToken, verifyJWT } from "../../helpers/jwt";
+import { access } from "fs";
 
 class authService {
-    async login(req: Request) {
+    async login(req: Request, res: Response) {
         const { email, password } = req.body;
 
         const user = (await getUserByEmail(email)) as IUserLogin;
@@ -35,9 +36,12 @@ class authService {
             expiresIn: "30m",
         });
 
-        console.log("ini log setelah buat token", token);
+        console.log("ini log setelah buat token", user, token);
 
-        return { token };
+        return {
+            user,
+            accessToken: token,
+        };
     }
     async register(req: Request, next: NextFunction) {
         try {
