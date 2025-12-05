@@ -1,3 +1,4 @@
+import { format } from 'date-fns/format';
 import { PrismaClient, BookingStatus } from '../../generated/prisma'; // Sesuaikan path ke generated prisma
 import { CreateReviewRequest } from '../../types/review.type';
 
@@ -12,18 +13,33 @@ export class ReviewService {
     // A. Cek apakah Booking ada?
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { room: true } // Kita butuh propertyId dari room
+      include: { room: true, user: true } // Kita butuh propertyId dari room
     });
 
     if (!booking) throw new Error("Booking not found");
     
     // B. Validasi Kepemilikan: Apakah yang mau review adalah pemesan asli?
-    if (booking.userId !== userId) throw new Error("Unauthorized: You did not make this booking");
+    if (booking.userId !== userId) {
+        console.error(`❌ REVIEW GAGAL: User ${userId} mencoba mereview booking milik user ${booking.userId}`);
+        // Jika tidak cocok, lempar error yang sesuai dengan pop-up Anda
+        throw new Error("Unauthorized, you did not make this booking"); 
+    }
     
     // C. Validasi Status: Hanya boleh review jika sudah selesai (COMPLETED) atau lunas (PAID)
     // Sesuai spek: "Review tempat penginapan dapat dilakukan ketika user selesai menginap"
     if (booking.status !== BookingStatus.COMPLETED && booking.status !== BookingStatus.PAID) {
         throw new Error("Cannot review unfinished booking. Status must be COMPLETED or PAID.");
+    }
+
+    // Cek 3: Apakah tanggal check-out sudah lewat (Jika Anda menggunakan validasi ini)
+    if (new Date(booking.checkOut) > new Date()) {
+        throw new Error("Review can only be left after check-out date: " + format(new Date(booking.checkOut), 'dd MMMM yyyy'));
+    }
+
+    // 2. Cek apakah sudah ada review
+    const existingReview = await prisma.review.findUnique({ where: { bookingId } });
+    if (existingReview) {
+      throw new Error("Review already exists for this booking.");
     }
 
     // D. Simpan ke Database

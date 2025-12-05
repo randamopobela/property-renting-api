@@ -24,8 +24,8 @@ async function main() {
     console.log('⚠️  Database cleaning skipped (tables might be empty)');
   }
 
-  // 2. Hash Password (Default: "password123")
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const newPassword = 'Password123!'; 
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   // 3. Buat User (Akun Login untuk Tenant)
   const tenantUser = await prisma.user.create({
@@ -75,7 +75,6 @@ async function main() {
     },
   });
 
-  // 6. Buat Room
   const room = await prisma.room.create({
     data: {
       propertyId: property.id,
@@ -87,7 +86,6 @@ async function main() {
   });
   console.log('🏠 Property & Room created');
 
-  // 7. Buat Booking: PAID (Untuk test Review & Report)
   const pastCheckIn = new Date();
   pastCheckIn.setDate(pastCheckIn.getDate() - 2);
   const pastCheckOut = new Date();

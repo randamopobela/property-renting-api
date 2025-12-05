@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { BookingService } from './booking.service';
 import { PrismaClient } from '../../generated/prisma';
+import { NextFunction } from 'express';
 
 const prisma = new PrismaClient();
 const bookingService = new BookingService();
@@ -19,15 +20,46 @@ export class BookingController {
   }
 
   // 2. Get My Bookings
-  async getMyBookings(req: Request, res: Response) {
+  async getMyBookings(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = "cmir6p5q10003bp7b6mdz43i2"; // ID Hardcode
+      // 1. Cek dulu apakah req.user ada (Middleware Auth bekerja)
+      if (!(req as any).user) {
+        // Ini terjadi jika Auth Middleware belum dipasang atau gagal
+        console.log(`\n=================================================`);
+        console.log(`❌ ERROR: req.user is UNDEFINED. Check Auth Middleware.`);
+        console.log(`=================================================\n`);
+        return res.status(401).json({ message: "Unauthorized: Token required or expired." });
+      }
+
+      // 2. Ambil ID dengan mencoba nama field yang berbeda (untuk kompatibilitas)
+      const userData = (req as any).user;
+      // Coba ambil ID dari field yang mungkin ada di JWT: .id, .userId, atau .user_id
+      const userId = userData.id || userData.userId || userData.user_id;
+
+      // 👇 KODE DEBUGGING KRUSIAL
+      console.log(`\n=================================================`);
+      console.log(`✅ DEBUG: Controller MyBookings ter-trigger.`);
+      console.log(`✅ DEBUG: User ID yang terdeteksi dari Token: ${userId}`);
+      console.log(`=================================================\n`);
+      // 👆 AKHIR KODE DEBUGGING
+
+      if (!userId) {
+        // Jika semua field ID dicoba tapi tetap null
+        return res.status(401).json({ message: "Unauthorized: User ID not found in token payload." });
+      }
+
+      // Memanggil service untuk mengambil data booking
       const bookings = await bookingService.getUserBookings(userId);
-      res.status(200).json({ message: "Success", data: bookings });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+
+      res.status(200).json({
+        message: "User bookings fetched",
+        data: bookings
+      });
+    } catch (error) {
+      next(error);
     }
   }
+
 
   // 3. Get Room Detail (Helper untuk Frontend)
   async getRoomDetail(req: Request, res: Response) {

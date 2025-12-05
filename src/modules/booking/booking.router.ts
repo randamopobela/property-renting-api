@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { BookingController } from './booking.controller';
 // 👇 Pastikan import ini menggunakan kurung kurawal { } (Named Import)
 import { uploader } from '../../middlewares/uploader.middleware';
+import { verifyToken } from '../../middlewares/auth.middleware';
 
 const router = Router();
 const bookingController = new BookingController();
@@ -14,7 +15,10 @@ const bookingController = new BookingController();
 router.post('/', bookingController.create.bind(bookingController));
 
 // 2. Get My Bookings
-router.get('/my-bookings', bookingController.getMyBookings.bind(bookingController));
+router.get('/my-bookings', 
+    verifyToken, // 👈 MIDDLEWARE AUTH DITEMPELKAN DI SINI
+    bookingController.getMyBookings.bind(bookingController)
+);
 
 // 3. Get Room Detail
 router.get('/room/:roomId', bookingController.getRoomDetail.bind(bookingController));
@@ -30,11 +34,15 @@ router.get('/:bookingId', bookingController.getBookingById.bind(bookingControlle
 // 5. Upload Payment
 router.post(
   '/:bookingId/payment', 
+  verifyToken, //
   uploader("TRX", "images").single('paymentProof'), 
   bookingController.uploadPayment.bind(bookingController)
 );
 
 // 6. Cancel Booking
-router.patch('/:bookingId/cancel', bookingController.cancel.bind(bookingController));
+router.post('/:bookingId/cancel', 
+    verifyToken, 
+    bookingController.cancel.bind(bookingController)
+);
 
 export default router;
