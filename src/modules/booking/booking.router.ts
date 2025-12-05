@@ -12,11 +12,14 @@ const bookingController = new BookingController();
 // ============================================================
 
 // 1. Create Booking
-router.post('/', bookingController.create.bind(bookingController));
+router.post('/', 
+    verifyToken, 
+    bookingController.create.bind(bookingController)
+);
 
 // 2. Get My Bookings
 router.get('/my-bookings', 
-    verifyToken, // 👈 MIDDLEWARE AUTH DITEMPELKAN DI SINI
+    verifyToken,
     bookingController.getMyBookings.bind(bookingController)
 );
 

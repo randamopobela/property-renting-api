@@ -134,4 +134,32 @@ export class BookingService {
         data: { status: BookingStatus.CANCELLED }
     });
   }
+
+  async getRoomDetail(roomId: string) {
+        const room = await prisma.room.findUnique({
+            where: { id: roomId },
+            include: {
+                // Wajib: Ambil properti yang terhubung ke kamar
+                property: {
+                    include: {
+                        // Wajib: Ambil tenant yang terhubung ke properti
+                        tenant: {
+                            // Wajib: Ambil user tenant (untuk kontak, dll.)
+                            include: { user: true } 
+                        },
+                        pictures: true // Ambil gambar jika ada
+                    }
+                }
+            }
+        });
+
+        if (!room) {
+            throw new Error("Room detail not found.");
+        }
+        
+        return room;
+    }
+
 }
+
+
