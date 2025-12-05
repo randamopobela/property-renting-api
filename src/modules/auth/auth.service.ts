@@ -26,15 +26,25 @@ class authService {
         } else if (user.isActive === false) {
             throw new ErrorHandler("User is not active.", 401);
         } else if (user.isVerified === false) {
-            throw new ErrorHandler("User is not verified.", 401);
+            // Ini akan ter-trigger jika di DB user.isVerified = false
+            throw new ErrorHandler("User is not verified.", 401); 
         } else if (!(await compare(password, user.password as string))) {
             throw new ErrorHandler("Password is incorrect.", 401);
         }
 
-        delete user.password;
-        const token = sign(user, jwtSecret, {
+        const jwtPayload = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.isVerified, 
+            userId: user.id 
+        };
+
+        const token = sign(jwtPayload, jwtSecret, {
             expiresIn: "30m",
         });
+
+        delete user.password; 
 
         console.log("ini log setelah buat token", user, token);
 

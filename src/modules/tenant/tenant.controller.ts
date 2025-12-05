@@ -4,7 +4,7 @@ import { PaginationParams } from "../../types/pagination.type";
 
 const tenantService = new TenantService();
 
-class TenantController {
+export class TenantController {
     
     // 1. Method Dashboard (Updated dengan Pagination)
     async getDashboard(req: Request, res: Response, next: NextFunction) {

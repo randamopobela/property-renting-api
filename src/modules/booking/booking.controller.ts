@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { BookingService } from './booking.service';
 import { PrismaClient } from '../../generated/prisma';
 
@@ -7,112 +7,129 @@ const bookingService = new BookingService();
 
 export class BookingController {
   
+  // ==========================================================
+  // HELPER: Ambil User ID dari Token (Private Method)
+  // ==========================================================
+  private getUserIdFromToken(req: Request): string {
+    const userData = (req as any).user;
+    if (!userData) throw new Error("Unauthorized: User data missing from token");
+    return userData.id || userData.userId || userData.user_id;
+  }
+
   // 1. Create Booking
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = "cmir6p5q10003bp7b6mdz43i2"; // ID Hardcode (Ganti req.user.id nanti)
+      // ❌ JANGAN HARDCODE ID!
+      // ✅ Ambil dari Token User yang sedang login
+      const userId = this.getUserIdFromToken(req);
+      
       const result = await bookingService.createBooking(userId, req.body);
       res.status(201).json({ message: "Booking created", data: result });
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      next(error);
     }
   }
 
-  // 2. Get My Bookings
-  async getMyBookings(req: Request, res: Response) {
+  // 2. Get My Bookings (Logic Debugging Anda sudah bagus, saya rapikan)
+  async getMyBookings(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = "cmir6p5q10003bp7b6mdz43i2"; // ID Hardcode
+      const userId = this.getUserIdFromToken(req);
+
+      console.log(`✅ DEBUG Controller: Mengambil booking untuk User ID: ${userId}`);
+
       const bookings = await bookingService.getUserBookings(userId);
-      res.status(200).json({ message: "Success", data: bookings });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
+
+      res.status(200).json({
+        message: "User bookings fetched",
+        data: bookings
+      });
+    } catch (error) {
+      next(error); // Lempar ke Error Handler global
     }
   }
 
-  // 3. Get Room Detail (Helper untuk Frontend)
-  async getRoomDetail(req: Request, res: Response) {
+
+  // 3. Get Room Detail (INI PERBAIKAN UTAMA UNTUK ERROR 500)
+  async getRoomDetail(req: Request, res: Response, next: NextFunction) {
     try {
-        console.log("✅ Masuk ke getRoomDetail. ID:", req.params.roomId);
         const { roomId } = req.params;
-        const room = await prisma.room.findUnique({
-            where: { id: roomId },
-            include: { property: { include: { pictures: true } } }
-        });
+        console.log("✅ Masuk ke getRoomDetail. ID:", roomId);
         
-        if (!room) return res.status(404).json({ message: "Room not found" });
+        // ❌ JANGAN Query Prisma manual di sini (Includenya kurang lengkap)
+        // ✅ PANGGIL SERVICE yang baru saja kita perbaiki (includenya lengkap)
+        const room = await bookingService.getRoomDetail(roomId);
         
         res.status(200).json({ message: "Success", data: room });
     } catch (error: any) {
-        res.status(500).json({ message: error.message });
+        // Jika error "Room detail not found", kirim 404
+        if (error.message.includes("not found")) {
+            return res.status(404).json({ message: error.message });
+        }
+        next(error);
     }
   }
 
   // 4. Get Booking By ID
-  async getBookingById(req: Request, res: Response) {
+  async getBookingById(req: Request, res: Response, next: NextFunction) {
     try {
         const { bookingId } = req.params;
-        console.log("🔍 Mencari Booking ID:", bookingId);
-
-        // Validasi input sederhana
+        
+        // Validasi sederhana
         if (!bookingId || bookingId === "undefined") {
             return res.status(400).json({ message: "Invalid Booking ID" });
         }
         
+        // Boleh pakai Prisma langsung di sini jika belum ada servicenya,
+        // Tapi pastikan include-nya cukup untuk kebutuhan frontend
         const booking = await prisma.booking.findUnique({
             where: { id: bookingId },
             include: { 
                 room: { include: { property: true } },
-                payments: true // Include payments biar tau status bayar
+                payments: true // Penting untuk Midtrans
             }
         });
 
-        // SAFETY CHECK: Jika null, jangan lanjut, langsung return 404
         if (!booking) {
-            console.error("❌ Booking tidak ditemukan di database!");
             return res.status(404).json({ message: "Booking not found" });
         }
 
         res.status(200).json({ message: "Success", data: booking });
     } catch (error: any) {
-        console.error("🔥 Error getBookingById:", error);
-        res.status(500).json({ message: error.message || "Internal Server Error" });
+        next(error);
     }
   }
 
-  // 5. Upload Payment (INI YANG TADI HILANG)
-  async uploadPayment(req: Request, res: Response) {
+  // 5. Upload Payment
+  async uploadPayment(req: Request, res: Response, next: NextFunction) {
     try {
       const { bookingId } = req.params;
       const file = req.file;
       
       if (!file) return res.status(400).json({ message: "No file uploaded" });
 
-      // Perhatikan path-nya, pastikan pakai slash /images/
       const filePath = `/images/${file.filename}`;
       
       const result = await bookingService.processPaymentUpload(bookingId, filePath);
 
       res.status(200).json({ message: "Upload success", data: result });
     } catch (error: any) {
-      console.error("🔥 Upload Error:", error);
-      const statusCode = typeof error.code === 'number' ? error.code : 500;
-      
-      res.status(statusCode).json({ 
-        message: error.message || "Internal Server Error" 
-      });
+      next(error);
     }
   }
 
-  // 6. Cancel Booking (INI JUGA YANG TADI HILANG)
-  async cancel(req: Request, res: Response) {
+  // 6. Cancel Booking
+  async cancel(req: Request, res: Response, next: NextFunction) {
     try {
         const { bookingId } = req.params;
-        const userId = "cmir6p5q10003bp7b6mdz43i2"; // Hardcode ID
+        
+        // ❌ JANGAN HARDCODE ID!
+        // ✅ Ambil dari Token agar user tidak bisa cancel punya orang lain
+        const userId = this.getUserIdFromToken(req);
         
         const result = await bookingService.cancelBooking(bookingId, userId);
         res.status(200).json({ message: "Cancelled", data: result });
     } catch (error: any) {
-        res.status(400).json({ message: error.message });
+        next(error);
     }
   }
 }
