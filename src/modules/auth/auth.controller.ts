@@ -47,27 +47,27 @@ class AuthController {
         }
     }
 
-    // async forgotPassword(req: Request, res: Response, next: NextFunction) {
-    //     try {
-    //         const data = await authService.forgotPassword(req);
-    //         responseHandler(
-    //             res,
-    //             "Email for reset password has been sent",
-    //             data
-    //         );
-    //     } catch (error) {
-    //         throw next(error);
-    //     }
-    // }
+    async forgotPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.forgotPassword(req);
+            responseHandler(
+                res,
+                "Email for reset password has been sent",
+                data
+            );
+        } catch (error) {
+            throw next(error);
+        }
+    }
 
-    // async resetPassword(req: Request, res: Response, next: NextFunction) {
-    //     try {
-    //         const data = await authService.resetPassword(req);
-    //         responseHandler(res, "Password successfully changed", data);
-    //     } catch (error) {
-    //         throw next(error);
-    //     }
-    // }
+    async resetPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.resetPassword(req);
+            responseHandler(res, "Password successfully changed", data);
+        } catch (error) {
+            throw next(error);
+        }
+    }
 }
 
 export default new AuthController();

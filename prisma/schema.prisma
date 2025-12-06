@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
+  binaryTargets = ["native", "windows"]
 }
 
 datasource db {
@@ -120,8 +121,11 @@ model Booking {
   expireAt  DateTime?     @map("expire_at")
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
+  
   room      Room          @relation(fields: [roomId], references: [id])
   user      User          @relation(fields: [userId], references: [id])
+  
+  // Relasi ke Payment (Sesuai kode lama Anda 1-to-1)
   payments  Payment?
   review    Review?
 
@@ -129,14 +133,21 @@ model Booking {
 }
 
 model Payment {
-  id         String    @id @default(cuid())
-  bookingId  String    @unique @map("booking_id")
-  proofUrl   String?   @map("proof_url")
-  approvedBy String?   @map("approved_by")
-  approvedAt DateTime? @map("approved_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
-  booking    Booking   @relation(fields: [bookingId], references: [id])
+  id          String   @id @default(cuid())
+  bookingId   String   @unique @map("booking_id")
+  proofUrl    String?  @map("proof_url")
+  approvedBy  String?  @map("approved_by")
+  approvedAt  DateTime? @map("approved_at")
+  amount      Int           @default(0) 
+  method      PaymentMethod @default(TRANSFER)
+  status      PaymentStatus @default(WAITING)
+  snapToken       String?   @map("snap_token")
+  snapRedirectUrl String?   @map("snap_redirect_url")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  booking     Booking  @relation(fields: [bookingId], references: [id])
 
   @@map("payments")
 }
@@ -175,8 +186,13 @@ enum BookingStatus {
 }
 
 enum PaymentMethod {
-  DEBIT_CARD
-  CREDIT_CARD
   TRANSFER
-  CASH
+  GATEWAY
+}
+
+enum PaymentStatus {
+  WAITING
+  PAID
+  FAILED
+  EXPIRED
 }

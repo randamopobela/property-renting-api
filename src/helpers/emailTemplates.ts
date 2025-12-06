@@ -47,3 +47,34 @@ export const reminderEmailTemplate = (userName: string, propertyName: string, ch
     <p style="font-size: 12px; color: #888; text-align: center;">StayEase Team</p>
   </div>
 `;
+
+export const paymentRejectedTemplate = (guestName: string, bookingId: string) => {
+    return `
+        <html>
+            <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                    <h2 style="color: #c0392b;">Pemberitahuan Penolakan Bukti Pembayaran</h2>
+                    <p>Halo, ${guestName},</p>
+                    <p>Kami telah meninjau bukti pembayaran Anda untuk Pesanan ID **${bookingId}** dan mohon maaf, kami harus menolaknya. Ini mungkin disebabkan oleh bukti yang buram, tidak lengkap, atau tidak sesuai.</p>
+                    <p style="margin-top: 20px;">
+                        <strong>Tindakan yang Harus Dilakukan:</strong>
+                    </p>
+                    <ol style="padding-left: 20px;">
+                        <li>Segera cek kembali status pesanan Anda.</li>
+                        <li>Silakan **upload ulang** bukti transfer yang jelas dan valid.</li>
+                        <li>Pesanan Anda akan tetap pada status Menunggu Pembayaran (PENDING).</li>
+                    </ol>
+                    <p style="margin-top: 30px; text-align: center;">
+                        <a href="http://localhost:3000/user/my-bookings" 
+                           style="background-color: #c0392b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                           Cek Pesanan Saya
+                        </a>
+                    </p>
+                    <p style="font-size: 0.9em; color: #777; margin-top: 20px;">
+                        Terima kasih atas kerja samanya.
+                    </p>
+                </div>
+            </body>
+        </html>
+    `;
+};

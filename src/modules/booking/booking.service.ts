@@ -1,13 +1,13 @@
-import { PrismaClient, BookingStatus, PaymentMethod } from '../../generated/prisma'; // Sesuaikan path relative
+import { PrismaClient, BookingStatus, PaymentMethod, PaymentStatus } from '../../generated/prisma'; // Sesuaikan path relative
 import { CreateBookingRequest } from '../../types/booking.type';
 import { emailService } from '../../services/email.service';
 import { paymentReceivedTemplate } from '../../helpers/emailTemplates';
+import { PaymentService } from '../../services/payment.service';
 
 const prisma = new PrismaClient();
-
+const paymentService = new PaymentService();
 export class BookingService {
   
-  // Service 1: Create Booking
   async createBooking(userId: string, data: CreateBookingRequest) {
     const { roomId, checkIn, checkOut, guests } = data;
 
@@ -24,19 +24,44 @@ export class BookingService {
     const expireDate = new Date();
     expireDate.setHours(expireDate.getHours() + 2);
 
-    return await prisma.booking.create({
-      data: {
-        userId,
-        roomId,
-        checkIn: start,
-        checkOut: end,
-        nights,
-        guests,
-        amount: totalAmount,
-        method: PaymentMethod.TRANSFER,
-        status: BookingStatus.PENDING,
-        expireAt: expireDate
-      }
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("User not found");
+
+    return await prisma.$transaction(async (tx) => {
+        const booking = await tx.booking.create({
+            data: {
+                userId, 
+                roomId, 
+                checkIn: start, 
+                checkOut: end, 
+                nights, 
+                guests,
+                amount: totalAmount, 
+                method: PaymentMethod.GATEWAY, 
+                status: BookingStatus.PENDING, 
+                expireAt: expireDate
+            }
+        });
+
+        const midtrans = await paymentService.createTransaction(booking.id, totalAmount, {
+            firstName: user.firstName || "Guest",
+            email: user.email,
+            phone: user.phone || "08123456789" 
+        });
+
+        await tx.payment.create({
+            data: {
+                bookingId: booking.id,
+                amount: totalAmount,
+                method: PaymentMethod.GATEWAY,
+                status: PaymentStatus.WAITING,
+                snapToken: midtrans.token,     
+                snapRedirectUrl: midtrans.redirect_url
+            }
+        });
+
+        // Return data booking digabung dengan snapToken agar Frontend bisa langsung pakai
+        return { ...booking, snapToken: midtrans.token };
     });
   }
 
@@ -54,55 +79,49 @@ export class BookingService {
     });
   }
 
-  // Service 3: Upload Payment (SUDAH DIPERBAIKI)
-  // Menggunakan parameter filePath (string) agar sesuai dengan Controller
-  async processPaymentUpload(bookingId: string, filePath: string) {
-    
-    // 1. Cek Booking Ada atau Tidak
+    async processPaymentUpload(bookingId: string, filePath: string) {
     const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
         include: { user: true }
     });
 
-    if (!booking) {
-        throw new Error("Booking not found");
-    }
+    if (!booking) throw new Error("Booking not found");
 
-    // 2. Gunakan Transaction
     const result = await prisma.$transaction(async (tx) => {
-        // A. Update Status Booking
         await tx.booking.update({
             where: { id: bookingId },
-            data: { status: BookingStatus.AWAITING_CONFIRMATION },
+            data: { 
+                status: BookingStatus.AWAITING_CONFIRMATION,
+                method: PaymentMethod.TRANSFER 
+            },
         });
 
-        // B. Upsert Payment
-        // Menggunakan filePath string langsung
         return await tx.payment.upsert({
             where: { bookingId: bookingId },
             update: {
-                proofUrl: filePath, 
+                proofUrl: filePath,
+                method: PaymentMethod.TRANSFER,
+                status: PaymentStatus.WAITING,
                 updatedAt: new Date()
             },
             create: {
                 bookingId: bookingId,
+                amount: booking.amount,
                 proofUrl: filePath,
+                method: PaymentMethod.TRANSFER,
+                status: PaymentStatus.WAITING
             },
         });
     });
 
-    // C. KIRIM EMAIL NOTIFIKASI (Side Effect)
-    // Kita taruh di luar transaction agar kalau email gagal, booking tetap tersimpan.
     if (booking.user && booking.user.email) {
         const htmlEmail = paymentReceivedTemplate(booking.user.firstName || "Guest", booking.id);
-        
-        // Fire and forget (tidak perlu await agar user tidak menunggu loading email)
         emailService.sendEmail(booking.user.email, "Pembayaran Sedang Diverifikasi", htmlEmail);
     }
+
     return result;
   }
 
-  // Service 4: Cancel Booking
   async cancelBooking(bookingId: string, userId: string) {
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     
@@ -115,4 +134,32 @@ export class BookingService {
         data: { status: BookingStatus.CANCELLED }
     });
   }
+
+  async getRoomDetail(roomId: string) {
+        const room = await prisma.room.findUnique({
+            where: { id: roomId },
+            include: {
+                // Wajib: Ambil properti yang terhubung ke kamar
+                property: {
+                    include: {
+                        // Wajib: Ambil tenant yang terhubung ke properti
+                        tenant: {
+                            // Wajib: Ambil user tenant (untuk kontak, dll.)
+                            include: { user: true } 
+                        },
+                        pictures: true // Ambil gambar jika ada
+                    }
+                }
+            }
+        });
+
+        if (!room) {
+            throw new Error("Room detail not found.");
+        }
+        
+        return room;
+    }
+
 }
+
+
