@@ -105,7 +105,9 @@ export const verifyToken = (
         const decoded = verifyJWT(token) as TUser;
 
         // Simpan ke req.user
-        (req as any).user = decoded;
+        // Memanfaatkan parameter response => res.locals | bisa membantu menitipkan data tertentu
+        // untuk lewat ke middleware atau route handler selanjutnya
+        res.locals.user = decoded;
 
         next();
     } catch (error) {
