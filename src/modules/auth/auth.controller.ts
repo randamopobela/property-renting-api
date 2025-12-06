@@ -5,7 +5,7 @@ import authService from "./auth.service";
 class AuthController {
     async login(req: Request, res: Response, next: NextFunction) {
         try {
-            const data = await authService.login(req);
+            const data = await authService.login(req, res);
             responseHandler(res, "Login success", data);
         } catch (error) {
             next(error);
@@ -15,33 +15,59 @@ class AuthController {
     async register(req: Request, res: Response, next: NextFunction) {
         try {
             const data = await authService.register(req, next);
-            responseHandler(res, "Registration success, please login!", data);
+            responseHandler(
+                res,
+                "Registration success, verify your email!",
+                data
+            );
         } catch (error) {
             next(error);
         }
     }
 
-    // async forgotPassword(req: Request, res: Response, next: NextFunction) {
-    //     try {
-    //         const data = await authService.forgotPassword(req);
-    //         responseHandler(
-    //             res,
-    //             "Email for reset password has been sent",
-    //             data
-    //         );
-    //     } catch (error) {
-    //         throw next(error);
-    //     }
-    // }
+    async verifyEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.verifyEmail(req, res, next);
+            responseHandler(
+                res,
+                "Email successfully verified. You can now login.",
+                data
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
 
-    // async resetPassword(req: Request, res: Response, next: NextFunction) {
-    //     try {
-    //         const data = await authService.resetPassword(req);
-    //         responseHandler(res, "Password successfully changed", data);
-    //     } catch (error) {
-    //         throw next(error);
-    //     }
-    // }
+    async resendEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.resendEmail(req, res, next);
+            responseHandler(res, "Verification email has been resent.", data);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async forgotPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.forgotPassword(req);
+            responseHandler(
+                res,
+                "Email for reset password has been sent",
+                data
+            );
+        } catch (error) {
+            throw next(error);
+        }
+    }
+
+    async resetPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const data = await authService.resetPassword(req);
+            responseHandler(res, "Password successfully changed", data);
+        } catch (error) {
+            throw next(error);
+        }
+    }
 }
 
 export default new AuthController();

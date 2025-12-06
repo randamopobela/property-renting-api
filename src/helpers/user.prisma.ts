@@ -7,6 +7,7 @@ export const getUserByEmail = async (email: string) => {
             email: true,
             password: true,
             role: true,
+            isActive: true,
             isVerified: true,
             firstName: true,
             lastName: true,

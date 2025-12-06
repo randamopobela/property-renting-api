@@ -1,217 +1,198 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-    provider = "prisma-client-js"
-    output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+  binaryTargets = ["native", "windows"]
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
-
-// ───────────────────────────────────────────────────────────────
-// ENUMS
-// ───────────────────────────────────────────────────────────────
-
-// Dikomen karena belum digunakan
-// enum FileType {
-//     PAYMENT_PROOF
-//     PROPERTY_IMAGE
-//     PROFILE
-// }
-
-enum Role {
-    GUEST
-    TENANT
-}
-
-enum BookingStatus {
-    PENDING
-    AWAITING_CONFIRMATION
-    PAID
-    CANCELLED
-    PROCESSING
-    COMPLETED
-}
-
-enum PaymentMethod {
-    DEBIT_CARD
-    CREDIT_CARD
-    TRANSFER
-    CASH
-}
-
-// ───────────────────────────────────────────────────────────────
-// MODELS
-// ───────────────────────────────────────────────────────────────
 
 model User {
-    id             String   @id @default(cuid())
-    email          String   @unique
-    password       String
-    firstName      String   @map("first_name")
-    lastName       String?  @map("last_name")
-    profilePicture String?  @map("profile_picture")
-    role           Role     @default(GUEST)
-    phone          String?
-    address        String?
-    isActive       Boolean  @default(true) @map("is_active")
-    isVerified     Boolean  @default(false) @map("is_verified")
-    createdAt      DateTime @default(now()) @map("created_at")
-    updatedAt      DateTime @updatedAt @map("updated_at")
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String?
+  firstName      String?   @map("first_name")
+  lastName       String?   @map("last_name")
+  profilePicture String?   @map("profile_picture")
+  role           Role      @default(GUEST)
+  phone          String?
+  address        String?
+  isActive       Boolean   @default(true) @map("is_active")
+  isVerified     Boolean   @default(false) @map("is_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  bookings       Booking[]
+  repliedBy      Review[]  @relation("ReviewReplier")
+  reviews        Review[]
+  tenant         Tenant?
 
-    // Relations
-    bookings  Booking[]
-    reviews   Review[]
-    repliedBy Review[]  @relation("ReviewReplier")
-    tenant    Tenant?
-
-    @@map("users")
+  @@map("users")
 }
 
 model Tenant {
-    id      String  @id @default(cuid())
-    userId  String  @unique @map("user_id")
-    company String?
+  id         String     @id @default(cuid())
+  userId     String     @unique @map("user_id")
+  company    String?
+  properties Property[]
+  user       User       @relation(fields: [userId], references: [id])
 
-    user User @relation(fields: [userId], references: [id])
-
-    // Relations
-    properties Property[]
-
-    @@map("tenants")
+  @@map("tenants")
 }
 
 model Property {
-    id          String   @id @default(cuid())
-    tenantId    String   @map("tenant_id")
-    name        String
-    city        String
-    address     String
-    category    String
-    description String
-    createdAt   DateTime @default(now()) @map("created_at")
-    updatedAt   DateTime @updatedAt @map("updated_at")
+  id          String          @id @default(cuid())
+  tenantId    String          @map("tenant_id")
+  name        String
+  city        String
+  address     String
+  category    String
+  description String
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
+  pictures    PropertyImage[]
+  reviews     Review[]
+  rooms       Room[]
+  seasonal    SeasonalPrice[]
 
-    tenant Tenant @relation(fields: [tenantId], references: [id])
-
-    // Relations
-    pictures PropertyImage[]
-    rooms    Room[]
-    seasonal SeasonalPrice[]
-    reviews  Review[]
-
-    @@map("properties")
+  @@map("properties")
 }
 
 model PropertyImage {
-    id         String @id @default(cuid())
-    propertyId String @map("property_id")
-    url        String
+  id         String   @id @default(cuid())
+  propertyId String   @map("property_id")
+  url        String
+  property   Property @relation(fields: [propertyId], references: [id])
 
-    property Property @relation(fields: [propertyId], references: [id])
-
-    @@map("property_images")
+  @@map("property_images")
 }
 
 model Room {
-    id          String  @id @default(cuid())
-    propertyId  String  @map("property_id")
-    type        String
-    basePrice   Int     @map("base_price")
-    capacity    Int
-    description String?
+  id           String             @id @default(cuid())
+  propertyId   String             @map("property_id")
+  type         String
+  basePrice    Int                @map("base_price")
+  capacity     Int
+  description  String?
+  bookings     Booking[]
+  availability RoomAvailability[]
+  property     Property           @relation(fields: [propertyId], references: [id])
 
-    property Property @relation(fields: [propertyId], references: [id])
-
-    // Relations
-    availability RoomAvailability[]
-    bookings     Booking[]
-
-    @@map("rooms")
+  @@map("rooms")
 }
 
 model RoomAvailability {
-    id     String   @id @default(cuid())
-    roomId String   @map("room_id")
-    date   DateTime
-    isOpen Boolean  @default(true) @map("is_open")
+  id     String   @id @default(cuid())
+  roomId String   @map("room_id")
+  date   DateTime
+  isOpen Boolean  @default(true) @map("is_open")
+  room   Room     @relation(fields: [roomId], references: [id])
 
-    room Room @relation(fields: [roomId], references: [id])
-
-    @@map("room_availabilities")
+  @@map("room_availabilities")
 }
 
 model SeasonalPrice {
-    id         String   @id @default(cuid())
-    propertyId String   @map("property_id")
-    startDate  DateTime @map("start_date")
-    endDate    DateTime @map("end_date")
-    type       String
-    value      Int
-    applyAll   Boolean  @default(true) @map("apply_all")
-    dates      Json?
+  id         String   @id @default(cuid())
+  propertyId String   @map("property_id")
+  startDate  DateTime @map("start_date")
+  endDate    DateTime @map("end_date")
+  type       String
+  value      Int
+  applyAll   Boolean  @default(true) @map("apply_all")
+  dates      Json?
+  property   Property @relation(fields: [propertyId], references: [id])
 
-    property Property @relation(fields: [propertyId], references: [id])
-
-    @@map("seasonal_prices")
+  @@map("seasonal_prices")
 }
 
 model Booking {
-    id        String        @id @default(cuid())
-    userId    String        @map("user_id")
-    roomId    String        @map("room_id")
-    checkIn   DateTime      @map("check_in")
-    checkOut  DateTime      @map("check_out")
-    nights    Int
-    guests    Int
-    amount    Int
-    method    PaymentMethod
-    status    BookingStatus @default(PENDING)
-    expireAt  DateTime?     @map("expire_at")
-    createdAt DateTime      @default(now()) @map("created_at")
-    updatedAt DateTime      @updatedAt @map("updated_at")
+  id        String        @id @default(cuid())
+  userId    String        @map("user_id")
+  roomId    String        @map("room_id")
+  checkIn   DateTime      @map("check_in")
+  checkOut  DateTime      @map("check_out")
+  nights    Int
+  guests    Int
+  amount    Int
+  method    PaymentMethod
+  status    BookingStatus @default(PENDING)
+  expireAt  DateTime?     @map("expire_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  
+  room      Room          @relation(fields: [roomId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  
+  // Relasi ke Payment (Sesuai kode lama Anda 1-to-1)
+  payments  Payment?
+  review    Review?
 
-    user User @relation(fields: [userId], references: [id])
-    room Room @relation(fields: [roomId], references: [id])
-
-    // Relations
-    payments Payment[]
-
-    @@map("bookings")
+  @@map("bookings")
 }
 
 model Payment {
-    id         String    @id @default(cuid())
-    bookingId  String    @unique @map("booking_id")
-    proofUrl   String?   @map("proof_url")
-    approvedBy String?   @map("approved_by")
-    approvedAt DateTime? @map("approved_at")
-    createdAt  DateTime  @default(now()) @map("created_at")
-    updatedAt  DateTime  @updatedAt @map("updated_at")
+  id          String   @id @default(cuid())
+  bookingId   String   @unique @map("booking_id")
+  proofUrl    String?  @map("proof_url")
+  approvedBy  String?  @map("approved_by")
+  approvedAt  DateTime? @map("approved_at")
+  amount      Int           @default(0) 
+  method      PaymentMethod @default(TRANSFER)
+  status      PaymentStatus @default(WAITING)
+  snapToken       String?   @map("snap_token")
+  snapRedirectUrl String?   @map("snap_redirect_url")
 
-    booking Booking @relation(fields: [bookingId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  booking     Booking  @relation(fields: [bookingId], references: [id])
 
-    @@map("payments")
+  @@map("payments")
 }
 
 model Review {
-    id         String   @id @default(cuid())
-    propertyId String   @map("property_id")
-    userId     String   @map("user_id")
-    comment    String
-    repliedBy  String?  @map("replied_by")
-    reply      String?
-    createdAt  DateTime @default(now()) @map("created_at")
+  id            String    @id @default(cuid())
+  bookingId     String    @unique @map("booking_id")
+  propertyId    String    @map("property_id")
+  userId        String    @map("user_id")
+  comment       String
+  repliedBy     String?   @map("replied_by")
+  reply         String?
+  repliedAt     DateTime? @map("replied_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  booking       Booking   @relation(fields: [bookingId], references: [id])
+  property      Property  @relation(fields: [propertyId], references: [id])
+  repliedByUser User?     @relation("ReviewReplier", fields: [repliedBy], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
 
-    property      Property @relation(fields: [propertyId], references: [id])
-    user          User     @relation(fields: [userId], references: [id])
-    repliedByUser User?    @relation("ReviewReplier", fields: [repliedBy], references: [id])
+  @@map("reviews")
+}
 
-    @@map("reviews")
+enum Role {
+  GUEST
+  TENANT
+}
+
+enum BookingStatus {
+  PENDING
+  AWAITING_CONFIRMATION
+  PAID
+  CANCELLED
+  PROCESSING
+  COMPLETED
+}
+
+enum PaymentMethod {
+  TRANSFER
+  GATEWAY
+}
+
+enum PaymentStatus {
+  WAITING
+  PAID
+  FAILED
+  EXPIRED
 }

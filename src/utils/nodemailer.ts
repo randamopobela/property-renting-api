@@ -12,19 +12,6 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// const handlebarOptions = {
-//     viewEngine: create({
-//         extname: ".hbs",
-//         partialsDir: path.resolve("./src/templates/"),
-//         layoutsDir: path.resolve("./src/templates/"),
-//         defaultLayout: false,
-//     }),
-//     viewPath: path.resolve("./src/templates/"),
-//     extName: ".hbs",
-// };
-
-// transporter.use("compile", hbs(handlebarOptions));
-
 export const sendEmail = async (
     to: string,
     subject: string,

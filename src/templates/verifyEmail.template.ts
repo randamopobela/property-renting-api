@@ -1,0 +1,46 @@
+export const verifyEmailTemplate = (nama: string, link: string) => {
+    return `<html>
+    <head>
+        <meta charset="utf-8" />
+        <style>
+            body { font-family: Arial, sans-serif; background: #f8f8f8; color:
+            #0f766e; padding: 24px; } .container { background: #ffffff;
+            border-radius: 8px; padding: 24px; max-width: 520px; margin: auto;
+            color: #0f766e; } h2 { color: #115e59; margin-bottom: 12px; } p {
+            line-height: 1.6; } .btn { display: inline-block; margin: 20px 0;
+            padding: 12px 18px; background: #0d9488; color: #ffffff !important;
+            text-decoration: none; border-radius: 6px; font-weight: bold; }
+            .footer { font-size: 12px; margin-top: 24px; color: #0d9488;
+            text-align: left; }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <h2>
+                Hi
+                ${nama},
+            </h2>
+
+            <p>
+                Terima kasih telah mendaftar di
+                <b>StayEase</b>. Silakan verifikasi email kamu dengan klik
+                tombol di bawah:
+            </p>
+
+            <a class="btn" href="${link}" target="_blank">
+                Verify My Email
+            </a>
+
+            <p style="font-size: 14px; margin-top: 16px;">
+                Link ini akan kedaluwarsa dalam
+                <b>1 jam</b>.
+            </p>
+
+            <p class="footer">
+                © 2025 StayEase.
+            </p>
+        </div>
+    </body>
+</html>`;
+};
