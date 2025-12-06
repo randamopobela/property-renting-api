@@ -23,9 +23,9 @@ class authService {
         const user = (await getUserByEmail(email)) as IUserLogin;
         if (!user) {
             throw new ErrorHandler("Email is incorrect.", 401);
-        } else if (user.isActive === false) {
+        } else if (!user.isActive) {
             throw new ErrorHandler("User is not active.", 401);
-        } else if (user.isVerified === false) {
+        } else if (!user.isVerified) {
             throw new ErrorHandler("User is not verified.", 401);
         } else if (!(await compare(password, user.password as string))) {
             throw new ErrorHandler("Password is incorrect.", 401);
@@ -36,7 +36,7 @@ class authService {
             expiresIn: "30m",
         });
 
-        console.log("ini log setelah buat token", user, token);
+        console.log("ini log setelah buat token", user);
 
         return {
             user,
@@ -45,15 +45,7 @@ class authService {
     }
     async register(req: Request, next: NextFunction) {
         try {
-            const {
-                email,
-                password,
-                firstName,
-                lastName,
-                profilePicture,
-                phone,
-                address,
-            } = req.body;
+            const { email } = req.body;
 
             const existingUser = await prisma.user.findUnique({
                 where: { email },
@@ -66,12 +58,6 @@ class authService {
             await prisma.user.create({
                 data: {
                     email,
-                    password: await hashedPassword(password),
-                    firstName,
-                    lastName: lastName ?? null,
-                    profilePicture: profilePicture ?? null,
-                    phone: phone ?? null,
-                    address: address ?? null,
                 },
             });
 
@@ -80,10 +66,10 @@ class authService {
                 purpose: "email_verification",
             });
 
-            const verificationUrl = `http://localhost:3000/verify-email?token=${token}`;
+            const verificationUrl = `http://localhost:3000/verify-email/${token}`;
 
             await sendEmail(email, "Email Verification", "verifyEmail", {
-                name: firstName,
+                name: email,
                 link: verificationUrl,
             });
         } catch (error) {
@@ -93,7 +79,8 @@ class authService {
 
     async verifyEmail(req: Request, res: Response, next: NextFunction) {
         try {
-            const { token } = req.body;
+            const { token, firstName, lastName, phone, address, password } =
+                req.body;
 
             if (!token) {
                 throw new ErrorHandler("Token is required", 400);
@@ -104,13 +91,28 @@ class authService {
                 purpose: string;
             };
 
-            if (decoded.purpose !== "email_verification") {
+            if (!decoded || decoded.purpose !== "email_verification") {
                 throw new ErrorHandler("Invalid token purpose", 400);
             }
 
+            const email = decoded.email;
+
+            const user = await prisma.user.findUnique({ where: { email } });
+
+            if (!user) {
+                throw new ErrorHandler("User not found.", 404);
+            }
+
             await prisma.user.update({
-                where: { email: decoded.email },
-                data: { isVerified: true },
+                where: { email },
+                data: {
+                    firstName,
+                    lastName: lastName || null,
+                    phone: phone || null,
+                    address: address || null,
+                    password: await hashedPassword(password),
+                    isVerified: true,
+                },
             });
         } catch (error) {
             next(error);
@@ -136,10 +138,10 @@ class authService {
                 purpose: "email_verification",
             });
 
-            const verificationUrl = `http://localhost:3000/verify-email?token=${token}`;
+            const verificationUrl = `http://localhost:3000/verify-email/${token}`;
 
             await sendEmail(email, "Email Verification", "verifyEmail", {
-                name: user.firstName,
+                name: email,
                 link: verificationUrl,
             });
         } catch (error) {
