@@ -43,7 +43,7 @@ router.post(
 );
 
 // 6. Cancel Booking
-router.post('/:bookingId/cancel', 
+router.patch('/:bookingId/cancel', 
     verifyToken, 
     bookingController.cancel.bind(bookingController)
 );

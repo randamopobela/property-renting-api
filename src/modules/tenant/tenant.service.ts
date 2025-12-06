@@ -1,6 +1,6 @@
 import { PrismaClient, Prisma, BookingStatus } from '../../generated/prisma'; 
 import { emailService } from "../../services/email.service";
-import { bookingConfirmedTemplate } from "../../helpers/emailTemplates";
+import { bookingConfirmedTemplate, paymentRejectedTemplate } from "../../helpers/emailTemplates";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { PaginationParams, PaginatedResponse } from '../../types/pagination.type'; 
@@ -123,9 +123,29 @@ export class TenantService {
     } else if (data.action === 'REJECT') {
         await prisma.booking.update({
             where: { id: bookingId },
-            data: { status: BookingStatus.PENDING }
+            data: { status: BookingStatus.PENDING,
+                expireAt: new Date(Date.now() + 60 * 60 * 1000)
+             }
         });
-        
+
+        if (paymentId) {
+             await prisma.payment.update({
+                where: { id: paymentId },
+                data: { status: 'WAITING' }
+            });
+        }
+
+        if (booking.user && booking.user.email) {
+            const guestName = booking.user.firstName || "Guest";
+            const htmlEmail = paymentRejectedTemplate(guestName, booking.id);
+
+            emailService.sendEmail(
+                booking.user.email, 
+                "⚠️ Bukti Pembayaran Ditolak", 
+                htmlEmail
+            );
+            console.log(`✉️ Email penolakan terkirim ke: ${booking.user.email}`);
+        }
         return { status: "REJECTED_TO_PENDING" };
     } else {
         throw new Error("Invalid action");
