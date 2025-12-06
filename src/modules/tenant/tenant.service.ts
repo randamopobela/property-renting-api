@@ -123,9 +123,17 @@ export class TenantService {
     } else if (data.action === 'REJECT') {
         await prisma.booking.update({
             where: { id: bookingId },
-            data: { status: BookingStatus.PENDING }
+            data: { status: BookingStatus.PENDING,
+                expireAt: new Date(Date.now() + 60 * 60 * 1000)
+             }
         });
-        
+
+        if (paymentId) {
+             await prisma.payment.update({
+                where: { id: paymentId },
+                data: { status: 'WAITING' }
+            });
+        }
         return { status: "REJECTED_TO_PENDING" };
     } else {
         throw new Error("Invalid action");
