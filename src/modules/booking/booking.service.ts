@@ -2,7 +2,7 @@ import { PrismaClient, BookingStatus, PaymentMethod, PaymentStatus } from '../..
 import { CreateBookingRequest } from '../../types/booking.type';
 import { emailService } from '../../services/email.service';
 import { paymentReceivedTemplate } from '../../helpers/emailTemplates';
-import { PaymentService } from '../../services/payment.service';
+import { PaymentService } from '../payment/payment.service';
 
 const prisma = new PrismaClient();
 const paymentService = new PaymentService();

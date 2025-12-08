@@ -200,6 +200,7 @@ exports.Prisma.BookingScalarFieldEnum = {
   amount: 'amount',
   method: 'method',
   status: 'status',
+  paidAt: 'paidAt',
   expireAt: 'expireAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -214,6 +215,7 @@ exports.Prisma.PaymentScalarFieldEnum = {
   amount: 'amount',
   method: 'method',
   status: 'status',
+  transactionId: 'transactionId',
   snapToken: 'snapToken',
   snapRedirectUrl: 'snapRedirectUrl',
   createdAt: 'createdAt',

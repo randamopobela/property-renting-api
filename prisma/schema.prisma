@@ -118,6 +118,7 @@ model Booking {
   amount    Int
   method    PaymentMethod
   status    BookingStatus @default(PENDING)
+  paidAt    DateTime?
   expireAt  DateTime?     @map("expire_at")
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
@@ -125,7 +126,6 @@ model Booking {
   room      Room          @relation(fields: [roomId], references: [id])
   user      User          @relation(fields: [userId], references: [id])
   
-  // Relasi ke Payment (Sesuai kode lama Anda 1-to-1)
   payments  Payment?
   review    Review?
 
@@ -141,6 +141,7 @@ model Payment {
   amount      Int           @default(0) 
   method      PaymentMethod @default(TRANSFER)
   status      PaymentStatus @default(WAITING)
+  transactionId   String?       @unique @map("transaction_id") // Midtrans Transaction ID
   snapToken       String?   @map("snap_token")
   snapRedirectUrl String?   @map("snap_redirect_url")
 
