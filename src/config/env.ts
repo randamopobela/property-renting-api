@@ -13,9 +13,9 @@ export const prisma = new PrismaClient();
 
 export const jwtSecret = process.env.JWT_SECRET || "";
 
-export const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
+export const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || "";
 
-export const jwtAccessSecret = process.env.JWT_ACCESS_SECRET;
+export const jwtAccessSecret = process.env.JWT_ACCESS_SECRET || "";
 
 export const clientURL = process.env.CLIENT_URL;
 

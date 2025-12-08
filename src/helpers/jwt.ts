@@ -20,3 +20,9 @@ export const createEmailVerificationToken = (payload: object): string => {
         expiresIn: "1h",
     } as SignOptions);
 };
+
+export const createResetPasswordToken = (payload: object): string => {
+    return sign(payload, jwtSecret, {
+        expiresIn: "5m",
+    } as SignOptions);
+};
