@@ -27,26 +27,35 @@ export const bookingConfirmedTemplate = (userName: string, bookingId: string, pr
   </div>
 `;
 
-export const reminderEmailTemplate = (userName: string, propertyName: string, checkInDate: string) => `
-  <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px;">
-    <div style="text-align: center; margin-bottom: 20px;">
-      <h2 style="color: #0d9488; margin: 0;">Besok Waktunya Check-in! 🎒</h2>
-    </div>
-    
-    <p>Halo <strong>${userName}</strong>,</p>
-    <p>Ini adalah pengingat bahwa Anda memiliki jadwal menginap besok di <strong>${propertyName}</strong>.</p>
-    
-    <div style="background: #fff7ed; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f97316;">
-      <p style="margin: 5px 0;"><strong>📅 Tanggal Check-in:</strong> ${checkInDate}</p>
-      <p style="margin: 5px 0;"><strong>📍 Properti:</strong> ${propertyName}</p>
-    </div>
+export const reminderEmailTemplate = (guestName: string, propertyName: string, checkInDate: string) => {
+    return `
+        <html>
+            <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f7f7f7;">
+                    <h2 style="color: #00796b;">Pengingat: Check-in Besok! 🎒</h2>
+                    <p>Halo, ${guestName},</p>
+                    <p>Kami ingin mengingatkan bahwa waktu check-in Anda untuk penginapan berikut adalah **Besok!**</p>
+                    
+                    <div style="background-color: #e0f2f1; padding: 15px; border-radius: 6px; margin-top: 15px;">
+                        <p style="margin: 0;"><strong>Nama Properti:</strong> ${propertyName}</p>
+                        <p style="margin: 5px 0 0 0;"><strong>Tanggal Check-in:</strong> ${checkInDate}</p>
+                    </div>
 
-    <p>Pastikan Anda membawa kartu identitas saat kedatangan. Kami tidak sabar menyambut Anda!</p>
-    
-    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-    <p style="font-size: 12px; color: #888; text-align: center;">StayEase Team</p>
-  </div>
-`;
+                    <p style="margin-top: 20px; font-size: 0.9em; color: #555;">
+                        Pastikan Anda membawa identitas yang diperlukan. Jika ada pertanyaan, silakan hubungi Tenant Anda.
+                    </p>
+                    
+                    <p style="margin-top: 30px; text-align: center;">
+                        <a href="http://localhost:3000/user/my-bookings" 
+                           style="background-color: #00796b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                           Lihat Detail Pesanan
+                        </a>
+                    </p>
+                </div>
+            </body>
+        </html>
+    `;
+};
 
 export const paymentRejectedTemplate = (guestName: string, bookingId: string) => {
     return `
@@ -72,6 +81,55 @@ export const paymentRejectedTemplate = (guestName: string, bookingId: string) =>
                     </p>
                     <p style="font-size: 0.9em; color: #777; margin-top: 20px;">
                         Terima kasih atas kerja samanya.
+                    </p>
+                </div>
+            </body>
+        </html>
+    `;
+};
+
+// Tambahkan function ini ke dalam file emailTemplates.ts Anda
+
+/**
+ * Template untuk notifikasi sukses pembayaran via Midtrans/Gateway.
+ * Dipanggil oleh Webhook (PaymentService).
+ */
+export const paymentSuccessTemplate = (
+    guestName: string, 
+    bookingId: string, 
+    propertyName: string, 
+    checkInDate: string,
+    amount: string | number // Ambil dari gross_amount notifikasi
+) => {
+    // Format jumlah untuk tampilan yang lebih baik
+    const formattedAmount = Number(amount).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
+
+    return `
+        <html>
+            <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #00796b; border-radius: 8px; background-color: #e0f2f1;">
+                    <h2 style="color: #00796b;">Pembayaran Berhasil Dikonfirmasi! 🎉</h2>
+                    <p>Halo, ${guestName},</p>
+                    <p>Pembayaran Anda sebesar <strong>${formattedAmount}</strong> untuk pesanan berikut telah kami terima dan berhasil dikonfirmasi:</p>
+                    
+                    <div style="background-color: #ffffff; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #b2dfdb;">
+                        <p style="margin: 0;"><strong>ID Pesanan:</strong> ${bookingId}</p>
+                        <p style="margin: 5px 0 0 0;"><strong>Properti:</strong> ${propertyName}</p>
+                        <p style="margin: 5px 0 0 0;"><strong>Check-in:</strong> ${checkInDate}</p>
+                    </div>
+
+                    <p style="margin-top: 20px;">
+                        Pesanan Anda sekarang berstatus **LUNAS (PAID)**. Kami menantikan kedatangan Anda!
+                    </p>
+                    
+                    <p style="margin-top: 30px; text-align: center;">
+                        <a href="http://localhost:3000/user/my-bookings" 
+                           style="background-color: #00796b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                           Lihat Riwayat Pesanan
+                        </a>
+                    </p>
+                    <p style="font-size: 0.9em; color: #777; margin-top: 20px;">
+                        Email ini dikirim otomatis oleh sistem Midtrans.
                     </p>
                 </div>
             </body>

@@ -85,7 +85,7 @@ export class BookingController {
             where: { id: bookingId },
             include: { 
                 room: { include: { property: true } },
-                payments: true // Penting untuk Midtrans
+                payments: true
             }
         });
 
