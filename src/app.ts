@@ -9,6 +9,7 @@ import tenantRouter from "./modules/tenant/tenant.router";
 import reviewRouter from "./modules/review/review.router";
 import reportRouter from "./modules/report/report.router";
 import cronService from "./services/cron.service";
+import paymentRouter from "./modules/payment/payment.router";
 
 export class App {
     private app: Application;
@@ -36,6 +37,7 @@ export class App {
         this.app.use("/api/tenant", tenantRouter);
         this.app.use("/api/reviews", reviewRouter);
         this.app.use("/api/reports", reportRouter);
+        this.app.use("/api/payment", paymentRouter);
     }
 
     private handleErrors() {

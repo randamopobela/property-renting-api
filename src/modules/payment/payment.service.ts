@@ -25,10 +25,6 @@ const snap = new MidtransClient.Snap({
 });
 
 export class PaymentService {
-  
-  // ==========================================================
-  // 1. CREATE TRANSACTION (Dipanggil dari Booking Service)
-  // ==========================================================
   async createTransaction(bookingId: string, amount: number, customer: CustomerDetails) {
     const parameter = {
       transaction_details: {
@@ -36,22 +32,21 @@ export class PaymentService {
         gross_amount: amount,
       },
       customer_details: customer,
+      notification_url: [
+        "https://distinguishedly-nulliporous-marguerita.ngrok-free.dev/api/payment/notification" 
+      ],
       credit_card: {
         secure: true,
       },
       callbacks: {
-          // URL ini WAJIB sama dengan URL yang didaftarkan di Dashboard Midtrans
           finish: `http://localhost:3000/booking/payment/${bookingId}/status`, 
       }
     };
 
     const transaction = await snap.createTransaction(parameter);
-    return transaction; // Mengandung snapToken dan redirect_url
+    return transaction; 
   }
 
-  // ==========================================================
-  // 2. PROCESS NOTIFICATION (Dipanggil dari Payment Controller - Webhook)
-  // ==========================================================
   async processNotification(notification: any) {
     const { 
         order_id, 
