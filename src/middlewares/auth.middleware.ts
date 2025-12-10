@@ -3,6 +3,7 @@ import { prisma } from "../config/env";
 import { verifyJWT } from "../helpers/jwt";
 import { ErrorHandler } from "../helpers/response.handler";
 import TUser from "../types/user.type";
+import { verify } from "jsonwebtoken";
 
 // export const uniqueUserGuard = async (
 //     req: Request,
@@ -86,31 +87,29 @@ import TUser from "../types/user.type";
 //     }
 // };
 
-export const verifyToken = (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const authHeader = req.get("authorization");
-        if (!authHeader) {
-            throw new ErrorHandler("Authorization header missing", 401);
-        }
-
-        const token = authHeader.split(" ")[1];
-        if (!token) {
-            throw new ErrorHandler("Token missing", 401);
-        }
-
-        const decoded = verifyJWT(token) as TUser;
-
-        // Simpan ke req.user
-        // Memanfaatkan parameter response => res.locals | bisa membantu menitipkan data tertentu
-        // untuk lewat ke middleware atau route handler selanjutnya
-        res.locals.user = decoded;
-
-        next();
-    } catch (error) {
-        next(error);
+export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const header = req.headers.authorization;
+    
+    if (!header) {
+      return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
+
+    const token = header.split(" ")[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized: Malformed token" });
+    }
+
+    // 3. Verifikasi Token
+    const secret = process.env.JWT_SECRET || "secret_key_default";
+    
+    const verified = verify(token, secret);
+
+    (req as any).user = verified;
+    next();
+
+  } catch (error) {
+    return res.status(401).json({ message: "Unauthorized: Invalid or expired token" });
+  }
 };
