@@ -32,9 +32,6 @@ export class PaymentService {
         gross_amount: amount,
       },
       customer_details: customer,
-      notification_url: [
-        "https://distinguishedly-nulliporous-marguerita.ngrok-free.dev/api/payment/notification" 
-      ],
       credit_card: {
         secure: true,
       },
