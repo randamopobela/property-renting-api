@@ -13,6 +13,7 @@ class CronService {
     
     this.scheduleAutoCancel();
     this.scheduleCheckInReminder();
+    this.scheduleAutoComplete();
   }
 
   private scheduleAutoCancel() {
@@ -96,6 +97,38 @@ class CronService {
         }
     });
   }
+
+  // JOB 3: AUTO COMPLETE (Setiap 1 Jam)
+  // Mengubah status PAID -> COMPLETED jika tanggal checkout sudah lewat
+  private scheduleAutoComplete() {
+    // Dijalankan pada menit ke-0 setiap jam
+    cron.schedule("0 * * * *", async () => {
+        console.log("⏰ [CRON] Running: Auto Complete Past Bookings...");
+        try {
+            const now = new Date();
+            const result = await prisma.booking.updateMany({
+                where: {
+                    status: BookingStatus.PAID, // Hanya yang sudah bayar
+                    checkOut: {
+                        lt: now, // Waktu checkout sudah berlalu
+                    },
+                },
+                data: {
+                    status: BookingStatus.COMPLETED, // Tandai selesai
+                },
+            });
+
+            if (result.count > 0) {
+                console.log(`✅ Auto-Completed ${result.count} past bookings.`);
+            } else {
+                console.log("   [CRON] No bookings to complete at this hour.");
+            }
+        } catch (error) {
+            console.error("🔥 Error in Auto-Complete Job:", error);
+        }
+    });
+  }
+  
 }
 
 export default new CronService();
