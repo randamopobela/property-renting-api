@@ -160,6 +160,33 @@ export class BookingService {
         return room;
     }
 
+     async autoCompleteBookings() {
+    try {
+      const now = new Date();
+      const result = await prisma.booking.updateMany({
+        where: {
+          status: 'PAID',
+          checkOut: {
+            lt: now, 
+          },
+        },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
+
+      if (result.count > 0) {
+        console.log(`[CRON] ✅ Berhasil mengubah ${result.count} pesanan menjadi COMPLETED.`);
+      } else {
+        // console.log("[CRON] Tidak ada pesanan yang perlu diselesaikan hari ini.");
+      }
+      
+      return result.count;
+    } catch (error) {
+      console.error("[CRON] ❌ Gagal menjalankan auto-complete booking:", error);
+    }
+  }
+
 }
 
 
